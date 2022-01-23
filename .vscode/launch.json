@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Benchmark Dynamic",
+            "type": "python",
+            "request": "launch",
+            "program": "benchmark_dynamic.py",
+            "console": "integratedTerminal",
+            "args" : ["--mode", "benchmark", "--tasks_path", "benchmark_small", "--load", "ours/ours.pth", "--num_processes", "1", "--gui"]
+        },
+        {
+            "name": "Benchmark Dynamic 2",
+            "type": "python",
+            "request": "launch",
+            "program": "benchmark_dynamic.py",
+            "console": "integratedTerminal",
+            "args" : ["--mode", "expert", "--name", "rrt_run", "--config", "rrt_run/config.json", "--tasks_path", "benchmark_small", "--num_processes", "1"]
+        }
+    ]
+}

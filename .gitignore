@@ -1,7 +1,6 @@
 benchmark/
 ours/
 
-.vscode/
 .vim/
 tags
 *.swp
@@ -136,8 +135,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-
 tasks/
 tasks.tar.xz
-benchmark/
-benchmark_small/
