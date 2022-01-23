@@ -234,6 +234,8 @@ class TaskManager:
         return self.current_dynamic_goal_config
 
     def interpolate_joint_values(self, start, end, t):
+        if any(map(lambda x: x is None, start)):
+            return end
         start = np.array(start)
         return start + t * (np.array(end) - start)
 

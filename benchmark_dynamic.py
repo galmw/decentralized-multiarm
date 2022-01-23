@@ -73,6 +73,7 @@ if __name__ == "__main__":
             logger=None)
         env.set_memory_cluster_map(policy_manager.memory_map)
     else:
+        
         RealTimeEnv = ray.remote(RealTimeEnv)
         envs = [RealTimeEnv.remote(
             env_config=env_conf,
@@ -81,6 +82,16 @@ if __name__ == "__main__":
             logger=None)
             for _ in range(args.num_processes)]
         env_pool = Pool(envs)
+        """
+        
+        envs = [RealTimeEnv(
+            env_config=env_conf,
+            training_config=training_conf,
+            gui=args.gui,
+            logger=None)
+            for _ in range(args.num_processes)]
+        env_pool = Pool(envs)
+        """
 
     def callback(result):
         benchmark_results.append(result)
@@ -106,6 +117,11 @@ if __name__ == "__main__":
                 callback(env.solve_task(task))
                 pbar_update(pbar)
     else:
+        """
+        envs[0].solve_task(tasks[0])
+        pass
+        """
+        
         benchmark_results = env_pool.map(
             exec_fn=lambda env, task: env.solve_task.remote(task),
             iterable=tasks,

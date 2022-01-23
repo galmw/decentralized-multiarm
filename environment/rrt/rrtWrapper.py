@@ -47,6 +47,7 @@ class RRTWrapper:
         self.actor_handle = actor_handle
 
     def birrt_from_task(self, task):
+        print("[RRTWrapper] Running BiRRT")
         return self.birrt(
             start_conf=task.start_config,
             goal_conf=task.start_goal_config,

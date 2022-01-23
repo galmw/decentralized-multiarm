@@ -21,7 +21,7 @@ class RealTimeEnv(BaseEnv):
         self.success_check_thread.setDaemon(True)
         self.success_check_thread.start()
         self.time_of_success = None
-        while not self.success_check_thread.isAlive():
+        while not self.success_check_thread.is_alive():
             sleep(0.001)
 
         self.in_collision = False
@@ -30,11 +30,11 @@ class RealTimeEnv(BaseEnv):
             name='collision checker')
         self.collision_check_thread.setDaemon(True)
         self.collision_check_thread.start()
-        while not self.collision_check_thread.isAlive():
+        while not self.collision_check_thread.is_alive():
             sleep(0.001)
 
         self.use_policy = 'policy' in training_config
-
+        # Gal - set use_policy to False? 
         if self.use_policy:
             self.policy = training_config['policy']
         else:
@@ -111,6 +111,8 @@ class RealTimeEnv(BaseEnv):
         return observation
 
     def has_time(self):
+        return True # Gal TODO
+
         return float(time() - self.episode_start_time) \
             < self.episode_time_limit
 

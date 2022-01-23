@@ -91,6 +91,8 @@ def parse_args():
                             'enjoy',
                             # 4. Load pretrained policy
                             'benchmark',
+                            # 5. Run the expert itself
+                            'expert',
                         ],
                         default='train')
     parser.add_argument('--expert_waypoints', type=str,
@@ -439,6 +441,7 @@ def setup(args, config):
     else:
         Env = BaseEnv
 
+    print(Env)
     num_processes = config['training']['num_processes']
     if num_processes < 0:
         num_processes = os.sysconf('SC_NPROCESSORS_ONLN')

@@ -5,7 +5,7 @@ import numpy as np
 from .utils import perform_expert_actions
 
 DEBUG_LOG = False
-COMPUTE_RRT_ONLINE = False
+COMPUTE_RRT_ONLINE = True # Changed to True
 
 
 @ray.remote
@@ -86,6 +86,7 @@ class RRTSupervisionEnv(BaseEnv):
 
         rrt_waypoints = None
         if self.expert_root_dir is not None:
+            print('[RRTSupervisionEnv] Loading expert waypints from file')
             rrt_waypoints = self.load_expert_waypoints_for_task(
                 task_id=self.get_current_task().id)
         if rrt_waypoints is None and self.rrt_wrapper is not None:
