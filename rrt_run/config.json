@@ -90,7 +90,7 @@
         "max_ur5s_count": 4,
         "task": {
             "generation_method": "random",
-	    "type": "static",
+	        "type": "static",
             "difficulty": {
                 "min_distance_between_bases": 0.3,
                 "max_distance_between_bases": 1.0

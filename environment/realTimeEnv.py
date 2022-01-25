@@ -34,10 +34,10 @@ class RealTimeEnv(BaseEnv):
             sleep(0.001)
 
         self.use_policy = 'policy' in training_config
-        # Gal - set use_policy to False? 
         if self.use_policy:
             self.policy = training_config['policy']
         else:
+            print("[realTimeEnv] Not using any learned poilcy")
             self.rrt = RRTWrapper.remote(
                 env_config,
                 gui=False)
@@ -111,8 +111,6 @@ class RealTimeEnv(BaseEnv):
         return observation
 
     def has_time(self):
-        return True # Gal TODO
-
         return float(time() - self.episode_start_time) \
             < self.episode_time_limit
 
@@ -161,6 +159,7 @@ class RealTimeEnv(BaseEnv):
                     timeout=self.episode_time_limit
                 ))
                 if waypoints is not None:
+                    print("[realTimeEnv] Found expert waypoints")
                     perform_expert_actions(
                         env=self,
                         expert_waypoints=waypoints,

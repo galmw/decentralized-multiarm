@@ -126,7 +126,7 @@ def parse_args():
             parser.print_help()
             exit()
         if args.config is None:
-            args.config = "{}/config.json".format(dirname(args.load))
+            args.config = os.path.join(dirname(args.load), "config.json")
 
     if args.mode == 'behaviour-clone':
         if args.expert_trajectories is None:
@@ -145,7 +145,7 @@ def parse_args():
             args.mode == 'tasks'):
         require_name()
         if args.config is None:
-            args.config = "{}/config.json".format(dirname(args.load))
+            args.config = os.path.join(dirname(args.load), "config.json")
         require_config()
 
     if args.mode == 'expert':

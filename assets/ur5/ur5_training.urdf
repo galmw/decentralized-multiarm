@@ -227,6 +227,11 @@
     <origin rpy="0.0 0.0 1.57079632679" xyz="0.0 0.13 0.0"/>
   </joint>
   <link name="ee_link">
+    <!-- Defualt inetrial (to avoid warnings) -->
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1" iyy="1" izz="1"/>
+    </inertial>
     <collision>
       <geometry>
         <box size="0.14 0.12 0.08"/>
@@ -316,7 +321,13 @@
     <selfCollide>true</selfCollide>
   </gazebo>
   <!-- ROS base_link to UR 'Base' Coordinates transform -->
-  <link name="base"/>
+  <link name="base">
+    <!-- Defualt inetrial (to avoid warnings) -->
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1" iyy="1" izz="1"/>
+    </inertial>
+  </link>
   <joint name="base_link-base_fixed_joint" type="fixed">
     <!-- NOTE: this rotation is only needed as long as base_link itself is
                  not corrected wrt the real robot (ie: rotated over 180
@@ -327,7 +338,13 @@
     <child link="base"/>
   </joint>
   <!-- Frame coincident with all-zeros TCP on UR controller -->
-  <link name="tool0"/>
+  <link name="tool0">
+    <!-- Defualt inetrial (to avoid warnings) -->
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1" iyy="1" izz="1"/>
+    </inertial>
+  </link>
   <joint name="wrist_3_link-tool0_fixed_joint" type="fixed">
     <origin rpy="-1.57079632679 0 0" xyz="0 0.0823 0"/>
     <parent link="wrist_3_link"/>
