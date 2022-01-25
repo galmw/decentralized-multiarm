@@ -234,8 +234,8 @@ class TaskManager:
         return self.current_dynamic_goal_config
 
     def interpolate_joint_values(self, start, end, t):
-        if any(map(lambda x: x is None, start)):
-            return end
+        # if any(map(lambda x: x is None, start)):
+        #     return end
         start = np.array(start)
         return start + t * (np.array(end) - start)
 
@@ -248,6 +248,7 @@ class TaskManager:
         # Get current joint config
         if self.current_task.start_goal_config is None:
             raise Exception('task does not support dynamic tasks.')
+        print(self.current_task.start_goal_config)
         curr = self.interpolate_joint_values(
             self.current_task.start_goal_config,
             self.current_task.goal_config,

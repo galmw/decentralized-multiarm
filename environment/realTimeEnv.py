@@ -104,6 +104,7 @@ class RealTimeEnv(BaseEnv):
         self.is_successful = False
         self.in_collision = False
         self.task_manager.set_timer(0.0)
+        self.task_manager.setup_visuals(self.task_manager.get_target_end_effector_poses())
         self.time_of_success = None
         observation = self.obs_to_policy([self.preprocess_obs(o)
                                           for o in self.get_observations()])
@@ -159,7 +160,6 @@ class RealTimeEnv(BaseEnv):
                     timeout=self.episode_time_limit
                 ))
                 if waypoints is not None:
-                    print("[realTimeEnv] Found expert waypoints")
                     perform_expert_actions(
                         env=self,
                         expert_waypoints=waypoints,

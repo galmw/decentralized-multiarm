@@ -22,10 +22,6 @@ if __name__ == "__main__":
     config = load_config(args.config)
     env_conf = config['environment']
     training_conf = config['training']
-    # Gal - delete these lines
-    env_conf['min_ur5s_count'] = 1
-    env_conf['max_ur5s_count'] = 10
-    env_conf['task']['type'] = 'dynamic'
     ray.init()
     signal(SIGINT, lambda sig, frame: exit())
     output_path = 'rrt_dynamic_benchmark_score.pkl'
@@ -83,13 +79,11 @@ if __name__ == "__main__":
             for _ in range(args.num_processes)]
         env_pool = Pool(envs)
 
-        # envs = [RealTimeEnv(
+        # env = RealTimeEnv(
         #     env_config=env_conf,
         #     training_config=training_conf,
         #     gui=args.gui,
         #     logger=None)
-        #     for _ in range(args.num_processes)]
-        # env_pool = Pool(envs)
 
     def callback(result):
         benchmark_results.append(result)
@@ -115,10 +109,9 @@ if __name__ == "__main__":
                 callback(env.solve_task(task))
                 pbar_update(pbar)
     else:
-        
-        # envs[0].solve_task(tasks[0])
-        # pass
-        
+
+        # for i in range(100):        
+        #     env.solve_task(tasks[i])
         
         benchmark_results = env_pool.map(
             exec_fn=lambda env, task: env.solve_task.remote(task),

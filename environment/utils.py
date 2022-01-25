@@ -136,6 +136,7 @@ RRT Supervision Utility funtions
 
 def ur5s_at_waypoint(ur5s, waypoint, threshold=5):
     waypoints = np.split(np.array(waypoint), len(ur5s))
+    # Gal - I am pretty sure some call to abs() is missing here before calling max()
     return all([max((
         np.array(target_joints) -
         np.array(ur5.get_arm_joint_values()))) < threshold
