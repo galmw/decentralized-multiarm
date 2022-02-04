@@ -40,8 +40,9 @@ if __name__ == "__main__":
 
     task_loader = TaskLoader(
         root_dir=args.tasks_path,
-        shuffle=True,
+        shuffle=False,
         repeat=False)
+    # Can change shuffle to True at some later stage
     training_conf['task_loader'] = task_loader
     # set up policy if loaded
     if args.load:
