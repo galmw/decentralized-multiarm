@@ -42,7 +42,7 @@
             "request": "launch",
             "program": "rrt_main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "expert", "--tasks_path", "benchmark_small", "--name", "rrt_run", "--config", "rrt_run/config.json", "--num_processes", "1", "--gui"]
+            "args" : ["--mode", "expert", "--tasks_path", "benchmark_drrt", "--name", "rrt_run", "--config", "rrt_run/config.json", "--num_processes", "1", "--gui"]
         },
     ]
 }

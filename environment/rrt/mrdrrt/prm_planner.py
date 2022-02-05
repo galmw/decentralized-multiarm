@@ -1,6 +1,5 @@
 import pickle
 import numpy as np
-import sys
 import networkx as nx
 import sklearn.neighbors
 
@@ -93,26 +92,6 @@ class PRMPlanner(object):
     #     self.env.PlotPoint(path[-1], 'm', 7)
     #     for i, config in enumerate(path[0:-1]):
     #         self.env.PlotEdge(path[i], path[i+1], edgecolor, 2)
-
-    # def PostProcessPRMPath(self, point_path, sconfig, gconfig):
-    #     """
-    #     Post-processes path from roadmap before sending to Cozmo.
-    #     Does two things: add angles to path, add start and goal configs
-    #     For angles, just points robot towards next waypoint.
-    #     """
-    #     # TODO check collision along these edges? What to do if there is one?
-    #     point_path.insert(0, sconfig[0:2])  # assume we don't need start pose in waypoint list
-    #     point_path.append(gconfig[0:2])
-
-    #     path_w_angles = []
-    #     for i, point in enumerate(point_path[0:-1]):  # First point -> second to last
-    #         vec2next = point_path[i+1] - point_path[i]
-    #         angle = np.arctan2(vec2next[1], vec2next[0])
-    #         config = np.append(point, angle)
-    #         path_w_angles.append(config)
-
-    #     path_w_angles.append(gconfig)
-    #     return path_w_angles
 
     # def FindPath(self, sconfig, gconfig):
     #     """Find nearest vertices to sconfig and gconfig

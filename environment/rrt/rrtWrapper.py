@@ -1,25 +1,26 @@
-from importlib.resources import path
-from environment.rrt.mrdrrt.mrdrrt_planner import MRdRRTPlanner
-from environment.rrt.mrdrrt.prm_planner import PRMPlanner
-from environment.rrt.mrdrrt.robot_ur5_env import MultiRobotUR5Env
-from .pybullet_utils import (
-    configure_pybullet, draw_line, remove_all_markers
-)
 from itertools import chain
 import ray
 import pybullet as p
-from .ur5_group import UR5Group
 from time import sleep
-from .rrt_connect import birrt
 import pickle
+
 from .obstacles import Obstacle
 import os
+from environment.rrt.mrdrrt.mrdrrt_planner import MRdRRTPlanner
+from environment.rrt.mrdrrt.prm_planner import PRMPlanner
+from environment.rrt.mrdrrt.robot_ur5_env import MultiRobotUR5Env, RobotUR5Env
+from .rrt_connect import birrt
+from .ur5_group import UR5Group
+from .pybullet_utils import (
+    configure_pybullet, draw_line, remove_all_markers
+)
 
 
 #@ray.remote
 class RRTWrapper:
     def __init__(self, env_config, gui=False, record=False):
         from environment.utils import create_ur5s, Target
+        
         print("[RRTWrapper] Setting up RRT Actor")
         # set up simulator
         configure_pybullet(
@@ -65,8 +66,8 @@ class RRTWrapper:
     def mrdrrt_from_task(self, task):
         print("[RRTWrapper] Running MrDRRT for task {0}".format(task.task_path))
         return self.mrdrrt(
-            start_conf=task.start_config,
-            goal_conf=task.goal_config,
+            start_configs=task.start_config,
+            goal_configs=task.goal_config,
             ur5_poses=task.base_poses,
             target_eff_poses=task.target_eff_poses,
             obstacles=task.obstacles,
@@ -135,38 +136,43 @@ class RRTWrapper:
             pickle.dump(prm_graphs, f)
         print("Saved roadmap.")
 
-    def mrdrrt(self, start_conf, goal_conf,
+    def run_single_prm(self, ur5_pose, start_conf, goal_conf, env):
+        self.ur5_group.setup([ur5_pose], [start_conf])
+        prm_planner = PRMPlanner(env, n_nodes=300, visualize=True)
+        assert prm_planner.generate_roadmap(start_conf, goal_conf)
+        return prm_planner.graph
+
+    def mrdrrt(self, start_configs, goal_configs,
               ur5_poses, target_eff_poses, obstacles=None,
               resolutions=0.1, timeout=100000, task_name=None):
         
-        self.setup_run(ur5_poses, start_conf, target_eff_poses, obstacles)
+        start_configs = [tuple(conf) for conf in start_configs]
+        goal_configs = [tuple(conf) for conf in goal_configs]
 
+        self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
         env = MultiRobotUR5Env(self.ur5_group, resolutions)
         prm_graphs = []
-        cache_prm_graphs = True
 
-        start_conf = [tuple(conf) for conf in start_conf]
-        goal_conf = [tuple(conf) for conf in goal_conf]
-        
+        cache_prm_graphs = True
         if cache_prm_graphs:
             prm_graphs = self.try_get_loaded_graphs(task_name)
-                 
         if prm_graphs == []:
-            for i in range(len(self.ur5_group.active_controllers)):
-                prm_planner = PRMPlanner(env.robot_envs[i], n_nodes=300, visualize=False)
-                assert prm_planner.generate_roadmap(start_conf[i], goal_conf[i])
-                prm_graphs.append(prm_planner.graph)
+            for i in range(len(start_configs)):
+                graph = self.run_single_prm(ur5_poses[i], start_configs[i], goal_configs[i], env.robot_envs[0])
+                prm_graphs.append(graph)
             if cache_prm_graphs:
                 self.cache_loaded_graphs(task_name, prm_graphs)
 
+        
+        self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
         mrdrrt = MRdRRTPlanner(prm_graphs, env, visualize=True)
-        path = mrdrrt.find_path(start_conf, goal_conf)
+        path = mrdrrt.find_path(start_configs, goal_configs)
         if path is None:
             return None
 
         path = [list(chain.from_iterable(step)) for step in path]
         if self.gui:
-            self.ur5_group.setup(ur5_poses, start_conf)
+            self.ur5_group.setup(ur5_poses, start_configs)
             input("Press enter to play demo!")
             self.demo_path(path)
         return path
