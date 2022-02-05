@@ -25,6 +25,7 @@ class Task:
                  base_poses,
                  start_config,
                  goal_config,
+                 obstacles=None,
                  difficulty=None,
                  dynamic_speed=None,
                  start_goal_config=None,
@@ -36,6 +37,7 @@ class Task:
         if self.start_goal_config is None:
             self.start_goal_config = [None for _ in goal_config]
         self.target_eff_poses = target_eff_poses
+        self.obstacles = obstacles
         self.ur5_count = len(self.start_config)
         self.task_path = task_path
         self.dynamic_speed = dynamic_speed
@@ -139,6 +141,9 @@ class Task:
             difficulty=None
             if 'difficulty' not in task_file
             else task_file['difficulty'],
+            obstacles=None
+            if 'obstacles' not in task_file
+            else task_file['obstacles'],
             dynamic_speed=None
             if 'dynamic_speed' not in task_file
             else task_file['dynamic_speed'],

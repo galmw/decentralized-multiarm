@@ -46,11 +46,12 @@ def configure_pybullet(rendering=False, debug=False, yaw=50.0, pitch=-35.0, dist
     if not rendering:
         p.connect(p.DIRECT)
     else:
-        p.connect(p.GUI_SERVER)
+        #p.connect(p.GUI_SERVER)
+        p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     if not debug:
         p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-    reset_camera(yaw=yaw, pitch=pitch, dist=dist, target=target)
+    # reset_camera(yaw=yaw, pitch=pitch, dist=dist, target=target) # Gal change camera angle to be more sexy
     p.setPhysicsEngineParameter(enableFileCaching=0)
     p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, True)
     p.resetSimulation()

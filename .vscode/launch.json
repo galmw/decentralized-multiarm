@@ -36,5 +36,13 @@
             "console": "integratedTerminal",
             "args" : ["--mode", "benchmark", "--tasks_path", "benchmark_small", "--load", "ours/ours.pth", "--num_processes", "1", "--gui"]
         },
+        {
+            "name": "Clean RRT",
+            "type": "python",
+            "request": "launch",
+            "program": "rrt_main.py",
+            "console": "integratedTerminal",
+            "args" : ["--mode", "expert", "--tasks_path", "benchmark_small", "--name", "rrt_run", "--config", "rrt_run/config.json", "--num_processes", "1", "--gui"]
+        },
     ]
 }

@@ -1,31 +1,5 @@
 import numpy as np
-from .pybullet_utils import remove_all_markers
-from .rrt_connect import birrt
-import time
 import pybullet as p
-from random import uniform
-from environment import UR5
-from os.path import isfile
-from json import load, dump
-
-
-def random_point_in_workspace(radius=0.5):
-    i = uniform(0, 1)
-    j = uniform(0, 1) ** 0.5
-    k = uniform(0, 1)
-    return np.array([
-        radius * j * np.cos(i * np.pi * 2) * np.cos(k * np.pi / 2),
-        radius * j * np.sin(i * np.pi * 2) * np.cos(k * np.pi / 2),
-        radius * j * np.sin(k * np.pi / 2),
-    ])
-
-
-def reached(controllers, targets):
-    dist = [np.linalg.norm(
-        np.array(t) - np.array(c.get_end_effector_pose()[0]))
-        for c, t in zip(controllers, targets)]
-    reached = [d < 0.1 for d in dist]
-    return all(reached)
 
 
 def split(a, n):
@@ -88,7 +62,7 @@ class UR5Group:
 
     def distance_fn(self, q1, q2):
         diff = np.array(self.difference_fn(q2, q1))
-        return np.sqrt(np.dot(diff, diff))
+        return np.linalg.norm(diff)
 
     def sample_fn(self):
         values = []
