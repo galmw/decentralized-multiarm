@@ -38,6 +38,7 @@ if __name__ == "__main__":
         root_dir=args.tasks_path,
         shuffle=False,
         repeat=False)
+    # Can change shuffle to True at some later stage
     training_conf['task_loader'] = task_loader
 
     RealTimeEnv = ray.remote(RealTimeEnv)
