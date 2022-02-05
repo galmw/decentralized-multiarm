@@ -34,11 +34,7 @@ class MRdRRTPlanner(object):
         q_new = self.implicit_graph.get_best_composite_neighbor(q_near, q_rand)
         print("New: ", q_new)
 
-        # Move forward from q_near in q_new's direction
-        for q in self.env.extend(q_near, q_new):
-            if self.env.check_multiple_collision(q):
-                break
-            q_near = self.tree.add_node(q, parent=q_near)
+        return q_new
 
     #@timefunc
     def expand(self, goal_configs):
@@ -53,7 +49,19 @@ class MRdRRTPlanner(object):
         print("qrand: ", q_rand)
         print("qnear: ", q_near)
 
-        self.oracle(q_near.config, q_rand)
+        q_new = self.oracle(q_near.config, q_rand)
+
+        if self.env.is_edge_collision_free(q_near.config, q_new):
+            self.tree.add_node(q_new, parent=q_near)
+        #return not any(self.check_multiple_collision(q) for q in self.extend(q1, q2))
+        # Move forward from q_near in q_new's direction
+        # for q in self.env.extend(q_near, q_new):
+        #     if self.env.check_multiple_collision(q):
+        #         break
+        #     # TODO q here is a long 3*6 list instead of list of tuples.
+        #     q_near = self.tree.add_node(q, parent=q_near)
+
+
 
         print("tree vertices: ", self.tree.nodes)
 

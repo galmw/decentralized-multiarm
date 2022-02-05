@@ -164,9 +164,10 @@ class RRTWrapper:
         if path is None:
             return None
 
-        input("Found a path! enter to play demo")
         path = [list(chain.from_iterable(step)) for step in path]
         if self.gui:
+            self.ur5_group.setup(ur5_poses, start_conf)
+            input("Press enter to play demo!")
             self.demo_path(path)
         return path
 
