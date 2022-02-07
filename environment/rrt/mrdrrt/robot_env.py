@@ -1,5 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
+from environment.rrt.pybullet_utils import forward_kinematics
+
 
 class RobotEnv(metaclass=ABCMeta):
     @abstractmethod
@@ -25,6 +27,19 @@ class RobotEnv(metaclass=ABCMeta):
 
     @abstractmethod
     def extend(self, q1, q2):
+        pass
+
+    @abstractmethod
+    def forward_kinematics(self, q):
+        pass
+
+    def draw_line_between_configs(self, q1, q2):
+        p1 = self.forward_kinematics(q1)
+        p2 = self.forward_kinematics(q2)
+        self.draw_line(p1, p2)
+
+    @abstractmethod
+    def draw_line(self, p1, p2):
         pass
 
     def is_edge_collision_free(self, q1, q2):
@@ -55,3 +70,9 @@ class MultiRobotEnv(metaclass=ABCMeta):
     def is_edge_collision_free(self, q1, q2):
         return not any(self.check_multiple_collision(q) for q in self.extend(q1, q2))
 
+    @abstractmethod
+    def setup_single_prm(i, start_configs, goal_configs, **kwargs):
+        """
+        Extra code if necessary before running a single PRM.
+        """
+        pass

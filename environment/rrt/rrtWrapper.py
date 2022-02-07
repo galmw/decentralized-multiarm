@@ -120,28 +120,6 @@ class RRTWrapper:
             self.demo_path(path)
         return path
 
-    def task_pickle_path(self, task_name):
-        return os.path.basename(task_name).split(".")[0] + ".p"
-
-    def try_get_loaded_graphs(self, task_name):
-        pickle_path = self.task_pickle_path(task_name)
-        if os.path.exists(pickle_path):
-            with open(pickle_path, 'rb') as f:
-                return pickle.load(f)
-        return []
-
-    def cache_loaded_graphs(self, task_name, prm_graphs):
-        pickle_path = self.task_pickle_path(task_name)
-        with open(pickle_path, "wb") as f:
-            pickle.dump(prm_graphs, f)
-        print("Saved roadmap.")
-
-    def run_single_prm(self, ur5_pose, start_conf, goal_conf, env):
-        self.ur5_group.setup([ur5_pose], [start_conf])
-        prm_planner = PRMPlanner(env, n_nodes=300, visualize=True)
-        assert prm_planner.generate_roadmap(start_conf, goal_conf)
-        return prm_planner.graph
-
     def mrdrrt(self, start_configs, goal_configs,
               ur5_poses, target_eff_poses, obstacles=None,
               resolutions=0.1, timeout=100000, task_name=None):
@@ -150,22 +128,13 @@ class RRTWrapper:
         goal_configs = [tuple(conf) for conf in goal_configs]
 
         self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
-        env = MultiRobotUR5Env(self.ur5_group, resolutions)
-        prm_graphs = []
-
-        cache_prm_graphs = True
-        if cache_prm_graphs:
-            prm_graphs = self.try_get_loaded_graphs(task_name)
-        if prm_graphs == []:
-            for i in range(len(start_configs)):
-                graph = self.run_single_prm(ur5_poses[i], start_configs[i], goal_configs[i], env.robot_envs[0])
-                prm_graphs.append(graph)
-            if cache_prm_graphs:
-                self.cache_loaded_graphs(task_name, prm_graphs)
-
-        
-        self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
-        mrdrrt = MRdRRTPlanner(prm_graphs, env, visualize=True)
+        env = MultiRobotUR5Env(self.ur5_group, resolutions)        
+        mrdrrt = MRdRRTPlanner(env, visualize=True)
+        mrdrrt.load_implicit_graph_from_file(task_name)
+        if not mrdrrt.implicit_graph:
+            mrdrrt.generate_implicit_graph_with_prm(start_configs, goal_configs, save_to_file=True, ur5_poses=ur5_poses)
+            mrdrrt.cache_loaded_graphs(task_name)
+        self.ur5_group.setup(ur5_poses, start_configs)
         path = mrdrrt.find_path(start_configs, goal_configs)
         if path is None:
             return None

@@ -46,6 +46,8 @@ class PRMPlanner(object):
                 neighbor = points[j]
                 if node != neighbor and self.env.is_edge_collision_free(node, neighbor):
                     self.graph.add_edge(node, neighbor)
+                    if self.visualize:
+                        self.env.draw_line_between_configs(node, neighbor)
             if i % 100 == 0:
                 print('Connected', i, 'landmarks to their nearest neighbors')
             i += 1

@@ -1,3 +1,4 @@
+from gym import spec
 import numpy as np
 import pybullet as p
 
@@ -13,9 +14,9 @@ class UR5Group:
         self.active_controllers = []
         self.collision_distance = collision_distance
 
-    def setup(self, start_poses, start_joints):
+    def setup(self, start_poses, start_joints, specific_ur5s=None):
         self.disable_all_ur5s()
-        self.enable_ur5s(count=len(start_poses))
+        self.enable_ur5s(count=len(start_poses), specific_ur5s=specific_ur5s)
         for c, pose, joints in zip(
                 self.active_controllers, start_poses, start_joints):
             c.set_arm_joints(joints)
@@ -28,13 +29,14 @@ class UR5Group:
             ur5.disable(idx=i)
         self.active_controllers = []
 
-    def enable_ur5s(self, count=None):
+    def enable_ur5s(self, count=None, specific_ur5s=None):
         self.disable_all_ur5s()
-        for i, ur5 in enumerate(self.all_controllers):
-            if count is not None and i == count:
-                break
-            ur5.enable()
-            self.active_controllers.append(ur5)
+        if specific_ur5s:
+            assert count == len(specific_ur5s)
+            self.active_controllers = [ur5 for i, ur5 in self.all_controllers if i in specific_ur5s]
+        if count:
+            self.active_controllers = self.all_controllers[:count]
+        [ur5.enable() for ur5 in self.active_controllers]
 
     def set_joint_positions(self, joint_values):
         assert len(joint_values) == self.compute_dof()

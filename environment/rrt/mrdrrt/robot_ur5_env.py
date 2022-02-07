@@ -1,3 +1,4 @@
+from environment.rrt import pybullet_utils
 from .robot_env import RobotEnv, MultiRobotEnv
 import itertools
 
@@ -10,7 +11,6 @@ class RobotUR5Env(RobotEnv):
         return tuple(self.ur5.arm_sample_fn())
 
     def check_collision(self, q):
-        # TODO move all other arms before using this thing so it actually works
         self.ur5.set_arm_joints(q)
         return self.ur5.check_collision()
 
@@ -19,6 +19,12 @@ class RobotUR5Env(RobotEnv):
 
     def extend(self, q1, q2):
         return self.ur5.arm_extend_fn(q1, q2)
+
+    def forward_kinematics(self, q):
+        return self.ur5.forward_kinematics(q)[0]
+
+    def draw_line(self, p1, p2):
+        pybullet_utils.draw_line(p1, p2, rgb_color=self.ur5.color, width=1)
 
 
 class MultiRobotUR5Env(MultiRobotEnv):
@@ -47,3 +53,8 @@ class MultiRobotUR5Env(MultiRobotEnv):
     
     def extend(self, q1, q2):
         return self.extend_fn(list(itertools.chain.from_iterable(q1)), list(itertools.chain.from_iterable(q2)))
+
+    def setup_single_prm(self, i, start_configs, goal_configs, **kwargs):
+        ur5_poses = kwargs['ur5_poses']
+        self.ur5_group.setup([ur5_poses[i]], [start_configs[i]], specific_ur5s=[i])
+

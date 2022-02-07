@@ -1,7 +1,11 @@
+import random
+import os
+import pickle
+
+from environment.rrt.mrdrrt.prm_planner import PRMPlanner
 from .tree import Tree, TreeNode
 from .implicit_graph import ImplicitGraph
 from .profile_utils import timefunc
-import random
 
 
 class MRdRRTPlanner(object):
@@ -16,9 +20,9 @@ class MRdRRTPlanner(object):
     of Robotics XI. Springer International Publishing, 2015. 591-607.
     """
 
-    def __init__(self, prm_graphs, env, visualize=False):
+    def __init__(self, env, visualize=False):
         self.env = env
-        self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
+        self.implicit_graph = None
         self.tree = Tree(self.env, self.implicit_graph)
         self.max_iter = 5000
         self.visualize = visualize
@@ -85,6 +89,10 @@ class MRdRRTPlanner(object):
         Main function for MRdRRT. Expands tree to find path from start to goal.
         Inputs: list of start and goal configs for robots.
         """
+        if self.implicit_graph is None:
+            print("Must create PRM graphs first for the implicit graph!"
+            "Either run with mrdrrt.build_implicit_graph_with_prm or load from file with mrdrrt.load_implicit_graph_from_file")
+            return
         if len(start_configs) != len(goal_configs):
             print("Start and goal configurations don't match in length")
             return
@@ -111,3 +119,34 @@ class MRdRRTPlanner(object):
             print("Failed to find path - hit maximum iterations.")
         else:
             return [node.config for node in path_nodes]
+
+    def task_cache_path(self, task_path):
+        return os.path.splitext(task_path)[0] + "_cached.p"
+
+    def load_implicit_graph_from_file(self, task_path):
+        pickle_path = self.task_cache_path(task_path)
+        try:
+            with open(pickle_path, 'rb') as f:
+                prm_graphs = pickle.load(f)
+                self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
+        except:
+            print("Can't load implicit graph from file.")
+
+    def cache_loaded_graphs(self, task_path):
+        pickle_path = self.task_cache_path(task_path)
+        with open(pickle_path, "wb") as f:
+            pickle.dump(self.implicit_graph.prm_graphs, f)
+        print("Saved roadmaps.")
+
+    def generate_implicit_graph_with_prm(self, start_configs, goal_configs, **kwargs):
+        prm_graphs = []
+        for i in range(len(start_configs)):
+            self.env.setup_single_prm(i, start_configs, goal_configs, **kwargs)
+            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=50, visualize=self.visualize)
+            prm_planner.generate_roadmap(start_configs[i], goal_configs[i])
+            prm_graphs.append(prm_planner.graph)
+        self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
+
+    
+
+
