@@ -33,8 +33,8 @@ class UR5Group:
         self.disable_all_ur5s()
         if specific_ur5s:
             assert count == len(specific_ur5s)
-            self.active_controllers = [ur5 for i, ur5 in self.all_controllers if i in specific_ur5s]
-        if count:
+            self.active_controllers = [ur5 for i, ur5 in enumerate(self.all_controllers) if i in specific_ur5s]
+        elif count:
             self.active_controllers = self.all_controllers[:count]
         [ur5.enable() for ur5 in self.active_controllers]
 
