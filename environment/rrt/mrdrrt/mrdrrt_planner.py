@@ -36,8 +36,6 @@ class MRdRRTPlanner(object):
         explored yet, and is closest (by sum of euclidean distances) to qnear.
         """
         q_new = self.implicit_graph.get_best_composite_neighbor(q_near, q_rand)
-        print("New: ", q_new)
-
         return q_new
 
     #@timefunc
@@ -50,25 +48,10 @@ class MRdRRTPlanner(object):
         else:
             q_rand = goal_configs
         q_near = self.tree.nearest_neighbor(q_rand)
-        print("qrand: ", q_rand)
-        print("qnear: ", q_near)
-
         q_new = self.oracle(q_near.config, q_rand)
 
         if self.env.is_edge_collision_free(q_near.config, q_new):
             self.tree.add_node(q_new, parent=q_near)
-        #return not any(self.check_multiple_collision(q) for q in self.extend(q1, q2))
-        # Move forward from q_near in q_new's direction
-        # for q in self.env.extend(q_near, q_new):
-        #     if self.env.check_multiple_collision(q):
-        #         break
-        #     # TODO q here is a long 3*6 list instead of list of tuples.
-        #     q_near = self.tree.add_node(q, parent=q_near)
-
-
-
-        print("tree vertices: ", self.tree.nodes)
-
 
     @timefunc
     def connect_to_target(self, goal_configs):
@@ -81,8 +64,8 @@ class MRdRRTPlanner(object):
         neighbor = self.tree.nearest_neighbor(goal_configs)
         success = self.env.is_edge_collision_free(neighbor.config, goal_configs)
         if success:
-            success_node = self.tree.add_node(goal_configs, parent=neighbor)
-        return success_node
+            return self.tree.add_node(goal_configs, parent=neighbor)
+        return None
 
     def find_path(self, start_configs, goal_configs):
         """
@@ -101,21 +84,19 @@ class MRdRRTPlanner(object):
 
         # Put start config in tree
         self.tree.add_node([tuple(conf) for conf in start_configs])
+        success = None
 
-        i = 0
-        while (i < self.max_iter):
+        for i in range(self.max_iter):
             self.expand(goal_configs)
-            success_node = self.connect_to_target(goal_configs)
-            if success_node:
+            success = self.connect_to_target(goal_configs)
+            if success:
                 print("Found a path! Constructing final path now..")
-                path_nodes = success_node.retrace()
+                path_nodes = success.retrace()
                 break
-
             if(i % 50 == 0):
                 print(str(i) + "th iteration")
-            i += 1
 
-        if (i == self.max_iter):
+        if success is None:
             print("Failed to find path - hit maximum iterations.")
         else:
             return [node.config for node in path_nodes]

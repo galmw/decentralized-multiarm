@@ -55,7 +55,7 @@ class RRTWrapper:
         self.actor_handle = actor_handle
 
     def birrt_from_task(self, task):
-        print("[RRTWrapper] Running BiRRT for task {0}".format(task.task_path))
+        print("[RRTWrapper] Running BiRRT for task {0}".format(task.id))
         return self.birrt(
             start_conf=task.start_config,
             goal_conf=task.goal_config,
@@ -64,18 +64,25 @@ class RRTWrapper:
             obstacles=task.obstacles)
     
     def mrdrrt_from_task(self, task):
-        print("[RRTWrapper] Running MrDRRT for task {0}".format(task.task_path))
+        print("[RRTWrapper] Running MrDRRT for task {0}".format(task.id))
         return self.mrdrrt(
             start_configs=task.start_config,
             goal_configs=task.goal_config,
             ur5_poses=task.base_poses,
             target_eff_poses=task.target_eff_poses,
             obstacles=task.obstacles,
-            task_name=task.task_path)
+            task_path=task.task_path)
 
     def birrt_from_task_with_actor_handle(self, task):
         rv = self.birrt_from_task(task)
         return rv, task.id, self.actor_handle
+
+    def load_scene_from_task(self, task, view_start=True):
+        print("[RRTWrapper] Loading scene from task {0}".format(task.id))
+        if view_start:
+            self.setup_run(task.base_poses, task.start_config, task.target_eff_poses, task.obstacles)
+        else:
+            self.setup_run(task.base_poses, task.goal_config, task.target_eff_poses, task.obstacles)
 
     def setup_run(self, ur5_poses, start_conf, target_eff_poses, obstacles):
         if self.gui:
@@ -113,7 +120,7 @@ class RRTWrapper:
                      timeout=timeout)
 
         if path is None:
-            #input("RRT Failed. Enter to continue")
+            input("RRT Failed. Enter to continue")
             return None
         if self.gui:
             #input("RRT success. Enter to continue")
@@ -122,7 +129,7 @@ class RRTWrapper:
 
     def mrdrrt(self, start_configs, goal_configs,
               ur5_poses, target_eff_poses, obstacles=None,
-              resolutions=0.1, timeout=100000, task_name=None):
+              resolutions=0.1, timeout=100000, task_path=None):
         
         start_configs = [tuple(conf) for conf in start_configs]
         goal_configs = [tuple(conf) for conf in goal_configs]
@@ -130,10 +137,10 @@ class RRTWrapper:
         self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
         env = MultiRobotUR5Env(self.ur5_group, resolutions)        
         mrdrrt = MRdRRTPlanner(env, visualize=True)
-        mrdrrt.load_implicit_graph_from_file(task_name)
+        mrdrrt.load_implicit_graph_from_file(task_path)
         if not mrdrrt.implicit_graph:
             mrdrrt.generate_implicit_graph_with_prm(start_configs, goal_configs, save_to_file=True, ur5_poses=ur5_poses)
-            mrdrrt.cache_loaded_graphs(task_name)
+            mrdrrt.cache_loaded_graphs(task_path)
         self.ur5_group.setup(ur5_poses, start_configs)
         path = mrdrrt.find_path(start_configs, goal_configs)
         if path is None:

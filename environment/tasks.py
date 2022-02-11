@@ -365,7 +365,7 @@ class TaskLoader:
 
     def __next__(self):
         self.current_idx += 1
-        if self.current_idx == len(self.files):
+        if self.current_idx - 1 == len(self.files):
             raise StopIteration
         return Task.from_file(
             task_path=self.files[self.current_idx - 1])
