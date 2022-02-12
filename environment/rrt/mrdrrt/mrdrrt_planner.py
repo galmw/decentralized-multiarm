@@ -51,20 +51,21 @@ class MRdRRTPlanner(object):
         q_new = self.oracle(q_near.config, q_rand)
 
         if self.env.is_edge_collision_free(q_near.config, q_new):
-            self.tree.add_node(q_new, parent=q_near)
+            self.tree.add_node(q_new, parent=q_near, visualize=self.visualize)
 
     @timefunc
-    def connect_to_target(self, goal_configs):
+    def connect_to_target(self, goal_configs, iteration):
         """
         Check if it's possible to get to goal from closest nodes in current tree.
         Called at the end of each iteration.
         Input: list of goal configurations (goal composite config)
         """
 
+        # Should be improved to: neighbor = self.tree.k_nearest_neighbors(goal_configs, int(math.log(iteration + 2, 2)))
         neighbor = self.tree.nearest_neighbor(goal_configs)
         success = self.env.is_edge_collision_free(neighbor.config, goal_configs)
         if success:
-            return self.tree.add_node(goal_configs, parent=neighbor)
+            return self.tree.add_node(goal_configs, parent=neighbor, visualize=self.visualize)
         return None
 
     def find_path(self, start_configs, goal_configs):
@@ -88,7 +89,7 @@ class MRdRRTPlanner(object):
 
         for i in range(self.max_iter):
             self.expand(goal_configs)
-            success = self.connect_to_target(goal_configs)
+            success = self.connect_to_target(goal_configs, i)
             if success:
                 print("Found a path! Constructing final path now..")
                 path_nodes = success.retrace()

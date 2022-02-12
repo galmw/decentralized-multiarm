@@ -25,11 +25,10 @@ if __name__ == "__main__":
 
     tasks = [t for t in task_loader]
  
-    #rrt = RRTWrapper.remote(env_config, gui=True)
     rrt = RRTWrapper(env_config, gui=True)
 
     for i in range(len(tasks)):
         #ray.get(rrt.birrt_from_task.remote(tasks[i]))
-        rrt.birrt_from_task(tasks[i])
-        #rrt.mrdrrt_from_task(tasks[i])
+        #rrt.birrt_from_task(tasks[i])
+        rrt.mrdrrt_from_task(tasks[i])
 

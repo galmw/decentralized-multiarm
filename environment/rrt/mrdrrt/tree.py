@@ -7,17 +7,19 @@ class Tree(object):
         self.env = env
         self.implicit_graph = implicit_graph
 
-    def add_node(self, config, parent=None):
+    def add_node(self, config, parent=None, visualize=False):
         """
         Add vertex to tree.
         """
         node = TreeNode(config, parent=parent)
         self.nodes.append(node)
+        if visualize:
+            self.env.draw_line_between_multi_configs(parent.config, node.config)
         return node
 
     def nearest_neighbor(self, config):
         """
-        Given composite configuration, find closest ones in current tree.
+        Given composite configuration, find closest one in current tree.
         """
         min_dist = float("inf")
         nearest = None

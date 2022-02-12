@@ -26,6 +26,10 @@ class RobotEnv(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def difference(self, q1, q2):
+        pass
+    
+    @abstractmethod
     def extend(self, q1, q2):
         pass
 
@@ -66,6 +70,10 @@ class MultiRobotEnv(metaclass=ABCMeta):
     @abstractmethod
     def extend(q1, q2):
         pass
+
+    def draw_line_between_multi_configs(self, q1, q2):
+        for i, (q1_robot, q2_robot) in enumerate(zip(q1, q2)):
+            self.robot_envs[i].draw_line_between_configs(q1_robot, q2_robot)
 
     def is_edge_collision_free(self, q1, q2):
         return not any(self.check_multiple_collision(q) for q in self.extend(q1, q2))

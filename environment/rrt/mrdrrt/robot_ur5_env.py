@@ -17,6 +17,9 @@ class RobotUR5Env(RobotEnv):
     def distance(self, q1, q2):
         return self.ur5.arm_distance_fn(q1, q2)
 
+    def difference(self, q1, q2):
+        return self.ur5.arm_difference_fn(q1, q2)
+
     def extend(self, q1, q2):
         return self.ur5.arm_extend_fn(q1, q2)
 

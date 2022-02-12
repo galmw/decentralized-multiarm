@@ -15,7 +15,7 @@ class PRMPlanner(object):
         self.graph = nx.Graph()
         self.n_nodes = n_nodes
         self.visualize = visualize
-        self.nn_k = 5 # Nearest-neighbor K const
+        self.nn_k = 15 # Nearest-neighbor K const
 
     def generate_roadmap(self, start, goal):
         """
