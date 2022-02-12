@@ -1,4 +1,3 @@
-import pickle
 import numpy as np
 import networkx as nx
 import sklearn.neighbors
@@ -15,7 +14,7 @@ class PRMPlanner(object):
         self.graph = nx.Graph()
         self.n_nodes = n_nodes
         self.visualize = visualize
-        self.nn_k = 15 # Nearest-neighbor K const
+        self.nn_k = 6 # Nearest-neighbor K const
 
     def generate_roadmap(self, start, goal):
         """
@@ -45,6 +44,7 @@ class PRMPlanner(object):
             for j in k_neighbors[0]:
                 neighbor = points[j]
                 if node != neighbor and self.env.is_edge_collision_free(node, neighbor):
+                    assert i != j
                     self.graph.add_edge(node, neighbor)
                     if self.visualize:
                         self.env.draw_line_between_configs(node, neighbor)
