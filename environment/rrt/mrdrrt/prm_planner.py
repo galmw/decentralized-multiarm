@@ -43,15 +43,13 @@ class PRMPlanner(object):
             for j in k_neighbors:
                 neighbor = points[j]
                 if node != neighbor:
-                    assert i != j
-                    path = list(self.env.extend(node, neighbor))[:-1]
-                    # Note: can be improved using some sort of bisert selector.
-                    if not any(self.env.check_collision(q) for q in path):
+                    assert i != j # Verify no loops
+                    path = self.env.check_path_collision_free(node, neighbor)
+                    if path:
                         self.graph.add_edge(node, neighbor, path=path)
                         if self.visualize:
-                            full_path =  [node] + path + [neighbor]
-                            for i in range(len(full_path) - 1):
-                                self.env.draw_line_between_configs(full_path[i], full_path[i + 1])
+                            self.env.draw_line_between_configs(node, neighbor, path=path)
+
             if i % 100 == 0:
                 print('Connected', i, 'landmarks to their nearest neighbors')
             i += 1

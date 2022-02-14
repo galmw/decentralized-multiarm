@@ -22,18 +22,18 @@ class ImplicitGraph(object):
     Defines implicit graph (composite of PRM roadmaps) for MRdRRT.
     """
 
-    def __init__(self, env, prm_graphs):
+    def __init__(self, env, roadmaps):
         """
         Loads PRM roadmap that will define implicit graph.
         """
-        self.prm_graphs = prm_graphs
+        self.roadmaps = roadmaps
         self.env = env
 
-    def get_best_neighbor_in_individual_graph(self, index, q_near, q_rand):
+    def _get_best_neighbor_in_individual_graph(self, index, q_near, q_rand):
         """
         Note: "Best" in dRRT is supposed to mean "with best angle".
         """
-        graph = self.prm_graphs[index]
+        graph = self.roadmaps[index]
         graph_env = self.env.robot_envs[index]
         target_vector = graph_env.difference(q_rand, q_near)
         min_angle = float("inf")
@@ -53,6 +53,5 @@ class ImplicitGraph(object):
         Given config on current tree and randomly sampled comp config,
         find neighbor of qnear that is best headed towards qrand
         """
-        best = [self.get_best_neighbor_in_individual_graph(i, q_near[i], q_rand[i]) for i in range(len(self.prm_graphs))]
-        return best
+        return tuple(self._get_best_neighbor_in_individual_graph(i, q_near[i], q_rand[i]) for i in range(len(self.roadmaps)))
 

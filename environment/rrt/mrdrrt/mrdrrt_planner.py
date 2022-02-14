@@ -1,7 +1,8 @@
+import itertools
 import random
 import os
 import pickle
-
+import networkx as nx
 from environment.rrt.mrdrrt.prm_planner import PRMPlanner
 from .tree import Tree, TreeNode
 from .implicit_graph import ImplicitGraph
@@ -19,12 +20,13 @@ class MRdRRTPlanner(object):
     of implicit roadmaps in multi-robot motion planning." Algorithmic Foundations
     of Robotics XI. Springer International Publishing, 2015. 591-607.
     """
+    _EXPAND_N = 20
+    _MAX_ITER = 5000
 
     def __init__(self, env, visualize=False):
         self.env = env
         self.implicit_graph = None
-        self.tree = Tree(self.env, self.implicit_graph)
-        self.max_iter = 5000
+        self.tree = nx.Graph()
         self.visualize = visualize
 
     #@timefunc
@@ -36,22 +38,44 @@ class MRdRRTPlanner(object):
         explored yet, and is closest (by sum of euclidean distances) to qnear.
         """
         q_new = self.implicit_graph.get_best_composite_neighbor(q_near, q_rand)
-        return q_new
+        path = self.local_connector(q_near, q_new)
+        if path:
+            return q_new, path
+        return None
 
+    def tree_nearest_neighbor(self, config):
+        """
+        Given composite configuration, find closest one in current tree.
+        """
+        min_dist = float("inf")
+        nearest = None
+
+        for node in self.tree.nodes:
+            dist = self.env.composite_distance(node, config)
+            if (dist < min_dist):
+                min_dist = dist
+                nearest = node
+
+        return nearest
+    
     #@timefunc
-    def expand(self, goal_configs):
+    def expand(self):
         """
-        Takes random sample and tries to expand tree in direction of sample.
+        Takes random samples and tries to expand tree in direction of sample.
         """
-        if random.random() > 0.3:
+        for _ in range(self._EXPAND_N):
             q_rand = self.env.sample_free_multi_config()
-        else:
-            q_rand = goal_configs
-        q_near = self.tree.nearest_neighbor(q_rand)
-        q_new = self.oracle(q_near.config, q_rand)
+            q_near = self.tree_nearest_neighbor(q_rand)
+            q_new, path = self.oracle(q_near, q_rand)
 
-        if self.env.is_edge_collision_free(q_near.config, q_new):
-            self.tree.add_node(q_new, parent=q_near, visualize=self.visualize)
+            if q_new and q_new not in self.tree.nodes:
+                self.tree.add_edge(q_near, q_new, path=path)
+                if self.visualize:
+                    self.env.draw_line_between_multi_configs(q_near, q_new, path)
+
+    def local_connector(self, q1, q2):
+        # Should at some point replace with better local connector that uses DAG algorithms.
+        return self.env.check_path_collision_free(q1, q2)
 
     @timefunc
     def connect_to_target(self, goal_configs, iteration):
@@ -60,13 +84,18 @@ class MRdRRTPlanner(object):
         Called at the end of each iteration.
         Input: list of goal configurations (goal composite config)
         """
-
         # Should be improved to: neighbor = self.tree.k_nearest_neighbors(goal_configs, int(math.log(iteration + 2, 2)))
-        neighbor = self.tree.nearest_neighbor(goal_configs)
-        success = self.env.is_edge_collision_free(neighbor.config, goal_configs)
-        if success:
-            return self.tree.add_node(goal_configs, parent=neighbor, visualize=self.visualize)
-        return None
+        neighbor = self.tree_nearest_neighbor(goal_configs)
+        if neighbor == goal_configs:
+            # If 'expand' has already reached the target, no need to try to connect.
+            return True
+        path = self.local_connector(neighbor, goal_configs)
+        if path:
+            self.tree.add_edge(neighbor, goal_configs, path=path)
+            if self.visualize:
+                self.env.draw_line_between_multi_configs(neighbor, goal_configs, path)
+            return True
+        return False
 
     def find_path(self, start_configs, goal_configs):
         """
@@ -77,30 +106,30 @@ class MRdRRTPlanner(object):
             print("Must create PRM graphs first for the implicit graph!"
             "Either run with mrdrrt.build_implicit_graph_with_prm or load from file with mrdrrt.load_implicit_graph_from_file")
             return
-        if len(start_configs) != len(goal_configs):
-            print("Start and goal configurations don't match in length")
-            return
+        assert len(start_configs) == len(goal_configs), "Start and goal configurations don't match in length"
 
         print("Looking for a path...")
 
         # Put start config in tree
-        self.tree.add_node([tuple(conf) for conf in start_configs])
+        self.tree.add_node(start_configs)
         success = None
 
-        for i in range(self.max_iter):
-            self.expand(goal_configs)
+        for i in range(self._MAX_ITER):
+            self.expand()
             success = self.connect_to_target(goal_configs, i)
             if success:
                 print("Found a path! Constructing final path now..")
-                path_nodes = success.retrace()
                 break
             if(i % 50 == 0):
                 print(str(i) + "th iteration")
 
-        if success is None:
-            print("Failed to find path - hit maximum iterations.")
+        if success:
+            nodes = nx.shortest_path(self.tree, source=start_configs, target=goal_configs)
+            path = [[list(itertools.chain.from_iterable(node1))] + self.tree.edges[node1, node2]['path'] for node1, node2 in zip(nodes, nodes[1:])]
+            path = list(itertools.chain.from_iterable(path)) + [list(itertools.chain.from_iterable(goal_configs))]
+            return path
         else:
-            return [node.config for node in path_nodes]
+            print("Failed to find path - hit maximum iterations.")
 
     def task_cache_path(self, task_path):
         return os.path.splitext(task_path)[0] + "_cached.p"
@@ -117,7 +146,7 @@ class MRdRRTPlanner(object):
     def cache_loaded_graphs(self, task_path):
         pickle_path = self.task_cache_path(task_path)
         with open(pickle_path, "wb") as f:
-            pickle.dump(self.implicit_graph.prm_graphs, f)
+            pickle.dump(self.implicit_graph.roadmaps, f)
         print("Saved roadmaps.")
 
     def generate_implicit_graph_with_prm(self, start_configs, goal_configs, **kwargs):
@@ -129,6 +158,6 @@ class MRdRRTPlanner(object):
             prm_graphs.append(prm_planner.graph)
         self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
 
-    
+
 
 

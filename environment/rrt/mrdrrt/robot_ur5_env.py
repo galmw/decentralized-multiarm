@@ -38,11 +38,14 @@ class MultiRobotUR5Env(MultiRobotEnv):
         self.check_multiple_collision_fn = self.ur5_group.get_collision_fn()
         self.extend_fn = self.ur5_group.get_extend_fn(resolutions)
 
+    def multi_forward_kinematics(self, q):
+        return [self.robot_envs[i].forward_kinematics(q[i*6:(i + 1)*6]) for i in range(len(q) // 6)]
+
     def sample_free_multi_config(self):
         """
         Returns array of randomly sampled node in composite config space.
         """
-        return [robot_env.sample_free_config() for robot_env in self.robot_envs]
+        return tuple(robot_env.sample_free_config() for robot_env in self.robot_envs)
 
     def composite_distance(self, q1, q2):
         """

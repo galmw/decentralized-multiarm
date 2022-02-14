@@ -131,8 +131,8 @@ class RRTWrapper:
               ur5_poses, target_eff_poses, obstacles=None,
               resolutions=0.1, timeout=100000, task_path=None):
         
-        start_configs = [tuple(conf) for conf in start_configs]
-        goal_configs = [tuple(conf) for conf in goal_configs]
+        start_configs = tuple(tuple(conf) for conf in start_configs)
+        goal_configs = tuple(tuple(conf) for conf in goal_configs)
 
         self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
         env = MultiRobotUR5Env(self.ur5_group, resolutions)        
@@ -146,7 +146,6 @@ class RRTWrapper:
         if path is None:
             return None
 
-        path = [list(chain.from_iterable(step)) for step in path]
         if self.gui:
             self.ur5_group.setup(ur5_poses, start_configs)
             input("Press enter to play demo!")
@@ -157,13 +156,9 @@ class RRTWrapper:
         edges = []
         for i in range(len(path_conf)):
             if i != len(path_conf) - 1:
-                for pose1, pose2 in zip(
-                        self.ur5_group.forward_kinematics(
-                            path_conf[i]),
-                        self.ur5_group.forward_kinematics(
-                            path_conf[i + 1])):
-                    draw_line(pose1[0], pose2[0],
-                              rgb_color=[1, 0, 0], width=6)
+                for pose1, pose2 in zip(self.ur5_group.forward_kinematics(path_conf[i]),
+                                        self.ur5_group.forward_kinematics(path_conf[i + 1])):
+                    draw_line(pose1[0], pose2[0], rgb_color=[1, 0, 0], width=6)
                     edges.append((pose1[0], pose2[0]))
         if self.record:
             with open('waypoints.pkl', 'wb') as f:

@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
-
-from environment.rrt.pybullet_utils import forward_kinematics
+import itertools
 
 
 class RobotEnv(metaclass=ABCMeta):
@@ -37,17 +36,25 @@ class RobotEnv(metaclass=ABCMeta):
     def forward_kinematics(self, q):
         pass
 
-    def draw_line_between_configs(self, q1, q2):
-        p1 = self.forward_kinematics(q1)
-        p2 = self.forward_kinematics(q2)
-        self.draw_line(p1, p2)
+    def draw_line_between_configs(self, q1, q2, path=[]):
+        full_path = [q1] + path + [q2]
+        points = list(map(self.forward_kinematics, full_path))
+        for prev, curr in zip(points, points[1:]):
+            self.draw_line(prev, curr)
 
     @abstractmethod
     def draw_line(self, p1, p2):
         pass
 
-    def is_edge_collision_free(self, q1, q2):
-        return not any(self.check_collision(q) for q in self.extend(q1, q2))
+    def check_path_collision_free(self, q1, q2):
+        """
+        Checks if path is collision free between two collision free configs. if it is, return it.
+        """
+        path = list(self.extend(q1, q2))[:-1]
+        # Note: can be improved using some sort of bisect selector.
+        if not any(self.check_collision(q) for q in path):
+            return path
+        return None
 
 
 class MultiRobotEnv(metaclass=ABCMeta):
@@ -71,13 +78,27 @@ class MultiRobotEnv(metaclass=ABCMeta):
     def extend(q1, q2):
         pass
 
-    def draw_line_between_multi_configs(self, q1, q2):
-        for i, (q1_robot, q2_robot) in enumerate(zip(q1, q2)):
-            self.robot_envs[i].draw_line_between_configs(q1_robot, q2_robot)
+    @abstractmethod
+    def multi_forward_kinematics(self, q):
+        pass
 
-    def is_edge_collision_free(self, q1, q2):
-        return not any(self.check_multiple_collision(q) for q in self.extend(q1, q2))
+    def draw_line_between_multi_configs(self, q1, q2, path=[]):
+        full_path = [list(itertools.chain.from_iterable(q1))] + path + [list(itertools.chain.from_iterable(q2))]
+        points = list(map(self.multi_forward_kinematics, full_path))
+        for prev, curr in zip(points, points[1:]):
+            for i in range(len(prev)):
+                self.robot_envs[i].draw_line(prev[i], curr[i])
 
+    def check_path_collision_free(self, q1, q2):
+        """
+        Checks if path is collision free between two collision free configs. if it is, return it.
+        """
+        path = list(self.extend(q1, q2))[:-1]
+        # Note: can be improved using some sort of bisect selector.
+        if not any(self.check_multiple_collision(q) for q in path):
+            return path
+        return None
+    
     @abstractmethod
     def setup_single_prm(i, start_configs, goal_configs, **kwargs):
         """

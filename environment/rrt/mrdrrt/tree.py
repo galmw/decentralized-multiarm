@@ -2,43 +2,30 @@ class Tree(object):
     """
     Tree structure, meant for use with implicit graph in MRdRRT.
     """
-    def __init__(self, env, implicit_graph):
+    def __init__(self, env):
         self.nodes = []
         self.env = env
-        self.implicit_graph = implicit_graph
 
-    def add_node(self, config, parent=None, visualize=False):
+    def add_node(self, config, parent=None, path=[], visualize=False):
         """
         Add vertex to tree.
         """
-        node = TreeNode(config, parent=parent)
+        node = TreeNode(config, parent=parent, path=path)
         self.nodes.append(node)
         if visualize:
-            self.env.draw_line_between_multi_configs(parent.config, node.config)
+            self.env.draw_line_between_multi_configs(parent.config, node.config, path=path)
         return node
 
-    def nearest_neighbor(self, config):
-        """
-        Given composite configuration, find closest one in current tree.
-        """
-        min_dist = float("inf")
-        nearest = None
 
-        for node in self.nodes:
-            dist = self.env.composite_distance(node.config, config)
-            if (dist < min_dist):
-                min_dist = dist
-                nearest = node
-
-        return nearest
 
 
 class TreeNode(object):
-    def __init__(self, config, parent=None):
+    def __init__(self, config, parent=None, path=[]):
         # configuration
         self.config = config
         # parent configuration
         self.parent = parent
+        self.path = path
 
     def retrace(self):
         """
