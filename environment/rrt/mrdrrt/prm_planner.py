@@ -30,24 +30,28 @@ class PRMPlanner(object):
         print(self.n_nodes, "landmarks sampled")
 
         # sklearn (which we use for nearest neighbor search) works with numpy array of points represented as numpy arrays
-        points = list(p for p in self.graph.nodes)
+        points = list(self.graph.nodes)
         _points = np.array([np.array(p) for p in points])
         nearest_neighbors = sklearn.neighbors.NearestNeighbors(n_neighbors=self.nn_k, metric=self.env.distance, algorithm='auto')
         nearest_neighbors.fit(_points)
 
         # Try to connect neighbors
         print('Connecting landmarks')
-        for i, node in enumerate(self.graph.nodes):
+        for i, node in enumerate(points):
             # Obtain the K nearest neighbors
-            k_neighbors = nearest_neighbors.kneighbors([_points[i]], return_distance=False)
-
-            for j in k_neighbors[0]:
+            k_neighbors = nearest_neighbors.kneighbors([_points[i]], return_distance=False)[0]
+            for j in k_neighbors:
                 neighbor = points[j]
-                if node != neighbor and self.env.is_edge_collision_free(node, neighbor):
+                if node != neighbor:
                     assert i != j
-                    self.graph.add_edge(node, neighbor)
-                    if self.visualize:
-                        self.env.draw_line_between_configs(node, neighbor)
+                    path = list(self.env.extend(node, neighbor))[:-1]
+                    # Note: can be improved using some sort of bisert selector.
+                    if not any(self.env.check_collision(q) for q in path):
+                        self.graph.add_edge(node, neighbor, path=path)
+                        if self.visualize:
+                            full_path =  [node] + path + [neighbor]
+                            for i in range(len(full_path) - 1):
+                                self.env.draw_line_between_configs(full_path[i], full_path[i + 1])
             if i % 100 == 0:
                 print('Connected', i, 'landmarks to their nearest neighbors')
             i += 1
