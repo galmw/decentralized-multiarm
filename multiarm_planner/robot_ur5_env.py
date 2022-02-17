@@ -3,7 +3,6 @@ from .rrt import pybullet_utils
 from .mrdrrt.robot_env import RobotEnv, MultiRobotEnv
 
 
-
 class RobotUR5Env(RobotEnv):
     def __init__(self, ur5) -> None:
         self.ur5 = ur5

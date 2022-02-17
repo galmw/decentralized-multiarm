@@ -1,15 +1,4 @@
-import ray
 import argparse
-
-
-def exit_handler(exit_handlers):
-    print("Gracefully terminating")
-    if exit_handlers is not None:
-        for exit_handler in exit_handlers:
-            if exit_handler is not None:
-                exit_handler()
-    ray.shutdown()
-    exit(0)
 
 
 def parse_args():
@@ -22,10 +11,12 @@ def parse_args():
                         default=16, help='How many processes to parallelize')
     parser.add_argument('--mode',
                         choices=[
-                            # Run the expert
-                            'expert',
+                            'rrt',
+                            'mrdrrt'
                         ],
-                        default='expert')
+                        default='rrt')
+    parser.add_argument('--cache-drrt', action='store_true',
+                        default=True, help='Cache drrt implicit graphs for later use')
 
     args = parser.parse_args()
 
@@ -34,7 +25,7 @@ def parse_args():
             print("Please supply tasks with --tasks_path")
             exit()
 
-    if args.mode == 'expert':
+    if args.mode == 'rrt' or args.mode == 'drrt':
         require_tasks()
 
     return args

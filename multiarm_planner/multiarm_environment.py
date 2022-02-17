@@ -32,30 +32,6 @@ class MultiarmEnvironment:
         self.targets = [Target(pose=[[0, 0, 0], [0, 0, 0, 1]], color=ur5.color)
                         for ur5 in self.ur5_group.all_controllers]
 
-    def birrt_from_task(self, task):
-        print("[MultiarmEnv] Running BiRRT for task {0}".format(task.id))
-        return self.birrt(start_conf=task.start_config,
-                          goal_conf=task.goal_config,
-                          ur5_poses=task.base_poses,
-                          target_eff_poses=task.target_eff_poses,
-                          obstacles=task.obstacles)
-    
-    def mrdrrt_from_task(self, task):
-        print("[MultiarmEnv] Running MrDRRT for task {0}".format(task.id))
-        return self.mrdrrt(start_configs=task.start_config,
-                           goal_configs=task.goal_config,
-                           ur5_poses=task.base_poses,
-                           target_eff_poses=task.target_eff_poses,
-                           obstacles=task.obstacles,
-                           task_path=task.task_path)
-
-    def load_scene_from_task(self, task, view_start=True):
-        print("[MultiarmEnv] Loading scene from task {0}".format(task.id))
-        if view_start:
-            self.setup_run(task.base_poses, task.start_config, task.target_eff_poses, task.obstacles)
-        else:
-            self.setup_run(task.base_poses, task.goal_config, task.target_eff_poses, task.obstacles)
-
     def setup_run(self, ur5_poses, start_conf, target_eff_poses, obstacles):
         if self.gui:
             remove_all_markers()
@@ -65,7 +41,22 @@ class MultiarmEnvironment:
         self.ur5_group.setup(ur5_poses, start_conf)
         del self.obstacles
         self.obstacles = Obstacle.load_obstacles(obstacles) if obstacles else None
-        
+    
+    def load_scene_from_task(self, task, view_start=True):
+        print("[MultiarmEnv] Loading scene from task {0}".format(task.id))
+        if view_start:
+            self.setup_run(task.base_poses, task.start_config, task.target_eff_poses, task.obstacles)
+        else:
+            self.setup_run(task.base_poses, task.goal_config, task.target_eff_poses, task.obstacles)
+
+    def birrt_from_task(self, task):
+        print("[MultiarmEnv] Running BiRRT for task {0}".format(task.id))
+        return self.birrt(start_conf=task.start_config,
+                          goal_conf=task.goal_config,
+                          ur5_poses=task.base_poses,
+                          target_eff_poses=task.target_eff_poses,
+                          obstacles=task.obstacles)
+
     def birrt(self, start_conf, goal_conf,
               ur5_poses, target_eff_poses, obstacles=None, resolutions=0.1, timeout=100000):
         self.setup_run(ur5_poses, start_conf, target_eff_poses, obstacles)
@@ -95,20 +86,28 @@ class MultiarmEnvironment:
             self.demo_path(ur5_poses, start_conf, path)
         return path
 
+    def mrdrrt_from_task(self, task, cache_drrt=True):
+        print("[MultiarmEnv] Running MrDRRT for task {0}".format(task.id))
+        return self.mrdrrt(start_configs=task.start_config,
+                           goal_configs=task.goal_config,
+                           ur5_poses=task.base_poses,
+                           target_eff_poses=task.target_eff_poses,
+                           obstacles=task.obstacles,
+                           task_path=task.task_path,
+                           cache_drrt=cache_drrt)
+                           
     def mrdrrt(self, start_configs, goal_configs,
               ur5_poses, target_eff_poses, obstacles=None,
-              resolutions=0.1, timeout=100000, task_path=None):
-        
+              resolutions=0.1, timeout=100000, task_path=None, cache_drrt=True):
         start_configs = tuple(tuple(conf) for conf in start_configs)
         goal_configs = tuple(tuple(conf) for conf in goal_configs)
-
         self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
         env = MultiRobotUR5Env(self.ur5_group, resolutions)        
         mrdrrt = MRdRRTPlanner(env, visualize=True)
-        mrdrrt.load_implicit_graph_from_file(task_path)
-        if not mrdrrt.implicit_graph:
-            mrdrrt.generate_implicit_graph_with_prm(start_configs, goal_configs, save_to_file=True, ur5_poses=ur5_poses)
-            mrdrrt.cache_loaded_graphs(task_path)
+
+        mrdrrt.get_implicit_graph(start_configs=start_configs, goal_configs=goal_configs, ur5_poses=ur5_poses,
+                                    cache_drrt=cache_drrt, task_path=task_path)
+
         self.ur5_group.setup(ur5_poses, start_configs)
         path = mrdrrt.find_path(start_configs, goal_configs)
         if path is None:

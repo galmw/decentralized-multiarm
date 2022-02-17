@@ -1,5 +1,5 @@
 import os
-from utils import parse_args
+from argument_parser import parse_args
 from multiarm_planner.rrt import MultiarmEnvironment
 from multiarm_planner.tasks import Task
 

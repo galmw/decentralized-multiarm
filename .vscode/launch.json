@@ -5,12 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "RRT",
+            "type": "python",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "args" : ["--mode", "rrt", "--tasks_path", "benchmark", "--num_processes", "1", "--gui"]
+        },
+        {
             "name": "dRRT",
             "type": "python",
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "expert", "--tasks_path", "benchmark_drrt", "--num_processes", "1", "--gui"]
+            "args" : ["--mode", "mrdrrt", "--tasks_path", "benchmark", "--cache-drrt", "--num_processes", "1", "--gui"]
         },
         {
             "name": "Scene Designer",
@@ -18,7 +26,7 @@
             "request": "launch",
             "program": "scene_designer.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "expert", "--tasks_path", "benchmark_drrt", "--name", "rrt_run", "--config", "rrt_run/config.json", "--num_processes", "1", "--gui"]
+            "args" : ["--mode", "expert", "--tasks_path", "benchmark", "--name", "rrt_run", "--config", "rrt_run/config.json", "--num_processes", "1", "--gui"]
         },
     ]
 }

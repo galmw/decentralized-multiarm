@@ -4,6 +4,7 @@ import os
 import pickle
 import heapq
 import networkx as nx
+
 from .prm_planner import PRMPlanner
 from .implicit_graph import ImplicitGraph
 
@@ -128,16 +129,13 @@ class MRdRRTPlanner(object):
     def task_cache_path(self, task_path):
         return os.path.splitext(task_path)[0] + "_cached.p"
 
-    def load_implicit_graph_from_file(self, task_path):
+    def load_implicit_graph_from_cache_file(self, task_path):
         pickle_path = self.task_cache_path(task_path)
-        try:
-            with open(pickle_path, 'rb') as f:
-                prm_graphs = pickle.load(f)
-                self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
-        except:
-            print("Can't load implicit graph from file.")
+        with open(pickle_path, 'rb') as f:
+            prm_graphs = pickle.load(f)
+            self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
 
-    def cache_loaded_graphs(self, task_path):
+    def cache_loaded_graphs_to_file(self, task_path):
         pickle_path = self.task_cache_path(task_path)
         with open(pickle_path, "wb") as f:
             pickle.dump(self.implicit_graph.roadmaps, f)
@@ -152,6 +150,15 @@ class MRdRRTPlanner(object):
             prm_graphs.append(prm_planner.graph)
         self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
 
-
+    def get_implicit_graph(self, start_configs, goal_configs, ur5_poses, cache_drrt, task_path):
+        if cache_drrt:
+            try:
+                self.load_implicit_graph_from_cache_file(task_path)
+            except:
+                print("Can't load implicit graph from file.")
+        if not self.implicit_graph:
+            self.generate_implicit_graph_with_prm(start_configs, goal_configs, ur5_poses=ur5_poses)
+        if cache_drrt:
+            self.cache_loaded_graphs_to_file(task_path)
 
 
