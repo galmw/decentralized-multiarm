@@ -4,6 +4,7 @@
 # ------------------------------------------------
 
 
+from environment.rrt.profile_utils import timefunc
 from .smoothing import smooth_path
 from .rrt import TreeNode, configs
 from .rrt_utils import irange, argmin
@@ -109,6 +110,7 @@ def direct_path(q1, q2, extend, collision):
     return path
 
 
+@timefunc
 def birrt(start_conf,
           goal_conf,
           distance,

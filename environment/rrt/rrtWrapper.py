@@ -1,40 +1,26 @@
 from itertools import chain
-import ray
 import pybullet as p
 from time import sleep
-import pickle
-
+from .profile_utils import timefunc
 from .obstacles import Obstacle
-import os
 from environment.rrt.mrdrrt.mrdrrt_planner import MRdRRTPlanner
-from environment.rrt.mrdrrt.prm_planner import PRMPlanner
-from environment.rrt.mrdrrt.robot_ur5_env import MultiRobotUR5Env, RobotUR5Env
+from environment.rrt.mrdrrt.robot_ur5_env import MultiRobotUR5Env
 from .rrt_connect import birrt
 from .ur5_group import UR5Group
-from .pybullet_utils import (
-    configure_pybullet, draw_line, remove_all_markers
-)
+from .pybullet_utils import configure_pybullet, draw_line, remove_all_markers
 
 
-#@ray.remote
 class RRTWrapper:
-    def __init__(self, env_config, gui=False, record=False):
+    def __init__(self, env_config, gui=False):
         from environment.utils import create_ur5s, Target
         
         print("[RRTWrapper] Setting up RRT Actor")
         # set up simulator
-        configure_pybullet(
-            rendering=gui,
-            debug=False,
-            yaw=0, pitch=0,
-            dist=1.0,
-            target=(0, 0, 0.3))
+        configure_pybullet(rendering=gui, debug=False, yaw=0, pitch=0, dist=1.0, target=(0, 0, 0.3))
+        p.loadURDF("plane.urdf", [0, 0, -env_config['collision_distance'] - 0.01])
+
         self.gui = gui
-        self.record = record
-        plane = p.loadURDF(
-            "plane.urdf",
-            [0, 0, -env_config['collision_distance'] - 0.01])
-        self.obstacles = [plane]
+        self.obstacles = None
 
         def create_ur5s_fn():
             return create_ur5s(
@@ -42,17 +28,10 @@ class RRTWrapper:
                 count=env_config['max_ur5s_count'],
                 speed=env_config['ur5_speed'])
 
-        self.ur5_group = UR5Group(
-            create_ur5s_fn=create_ur5s_fn,
-            collision_distance=env_config['collision_distance'])
-        self.targets = [Target(
-            pose=[[0, 0, 0], [0, 0, 0, 1]],
-            color=ur5.color)
-            for ur5 in self.ur5_group.all_controllers]
-        self.actor_handle = None
-
-    def set_actor_handle(self, actor_handle):
-        self.actor_handle = actor_handle
+        self.ur5_group = UR5Group(create_ur5s_fn=create_ur5s_fn,
+                                  collision_distance=env_config['collision_distance'])
+        self.targets = [Target(pose=[[0, 0, 0], [0, 0, 0, 1]], color=ur5.color)
+                        for ur5 in self.ur5_group.all_controllers]
 
     def birrt_from_task(self, task):
         print("[RRTWrapper] Running BiRRT for task {0}".format(task.id))
@@ -72,10 +51,6 @@ class RRTWrapper:
             target_eff_poses=task.target_eff_poses,
             obstacles=task.obstacles,
             task_path=task.task_path)
-
-    def birrt_from_task_with_actor_handle(self, task):
-        rv = self.birrt_from_task(task)
-        return rv, task.id, self.actor_handle
 
     def load_scene_from_task(self, task, view_start=True):
         print("[RRTWrapper] Loading scene from task {0}".format(task.id))
@@ -123,7 +98,6 @@ class RRTWrapper:
             input("RRT Failed. Enter to continue")
             return None
         if self.gui:
-            #input("RRT success. Enter to continue")
             self.demo_path(path)
         return path
 
@@ -160,12 +134,8 @@ class RRTWrapper:
                                         self.ur5_group.forward_kinematics(path_conf[i + 1])):
                     draw_line(pose1[0], pose2[0], rgb_color=[1, 0, 0], width=6)
                     edges.append((pose1[0], pose2[0]))
-        if self.record:
-            with open('waypoints.pkl', 'wb') as f:
-                pickle.dump(edges, f)
         for i, q in enumerate(path_conf):
             self.ur5_group.set_joint_positions(q)
-            #sleep(0.01)
-            sleep(0.1)
+            sleep(0.05)
         input("Done playing demo")
 

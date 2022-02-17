@@ -1,12 +1,12 @@
 import itertools
-import random
+import math
 import os
 import pickle
+import heapq
 import networkx as nx
 from environment.rrt.mrdrrt.prm_planner import PRMPlanner
-from .tree import Tree, TreeNode
 from .implicit_graph import ImplicitGraph
-from .profile_utils import timefunc
+from ..profile_utils import timefunc
 
 
 class MRdRRTPlanner(object):
@@ -29,7 +29,6 @@ class MRdRRTPlanner(object):
         self.tree = nx.Graph()
         self.visualize = visualize
 
-    #@timefunc
     def oracle(self, q_near, q_rand):
         """
         Direction oracle, as defined in Oren's paper.
@@ -41,24 +40,24 @@ class MRdRRTPlanner(object):
         path = self.local_connector(q_near, q_new)
         if path:
             return q_new, path
-        return None
+        return None, None
 
     def tree_nearest_neighbor(self, config):
-        """
-        Given composite configuration, find closest one in current tree.
-        """
-        min_dist = float("inf")
-        nearest = None
+        return min(self.tree.nodes, key=lambda node: self.env.composite_distance(node, config))
 
-        for node in self.tree.nodes:
-            dist = self.env.composite_distance(node, config)
-            if (dist < min_dist):
-                min_dist = dist
-                nearest = node
+    def tree_k_nearest_neighbors(self, config, k):
+        """
+        Given composite configuration, find k closest ones in current tree.
+        """
+        neighbors = heapq.nsmallest(k, self.tree.nodes, key=lambda node: self.env.composite_distance(node, config))
+        # for node in neighbors:
+        #     dist = self.env.composite_distance(node, config)
+        #     if (dist < min_dist):
+        #         min_dist = dist
+        #         nearest = node
 
-        return nearest
+        return neighbors
     
-    #@timefunc
     def expand(self):
         """
         Takes random samples and tries to expand tree in direction of sample.
@@ -77,7 +76,6 @@ class MRdRRTPlanner(object):
         # Should at some point replace with better local connector that uses DAG algorithms.
         return self.env.check_path_collision_free(q1, q2)
 
-    @timefunc
     def connect_to_target(self, goal_configs, iteration):
         """
         Check if it's possible to get to goal from closest nodes in current tree.
@@ -85,18 +83,22 @@ class MRdRRTPlanner(object):
         Input: list of goal configurations (goal composite config)
         """
         # Should be improved to: neighbor = self.tree.k_nearest_neighbors(goal_configs, int(math.log(iteration + 2, 2)))
-        neighbor = self.tree_nearest_neighbor(goal_configs)
-        if neighbor == goal_configs:
-            # If 'expand' has already reached the target, no need to try to connect.
-            return True
-        path = self.local_connector(neighbor, goal_configs)
-        if path:
-            self.tree.add_edge(neighbor, goal_configs, path=path)
-            if self.visualize:
-                self.env.draw_line_between_multi_configs(neighbor, goal_configs, path)
-            return True
+        # neighbor = self.tree_nearest_neighbor(goal_configs)
+        neighbors = self.tree_k_nearest_neighbors(goal_configs, int(math.log(iteration + 1, 2)))
+        for neighbor in neighbors:
+            if neighbor == goal_configs:
+                # If 'expand' has already reached the target, no need to try to connect.
+                return True
+            path = self.local_connector(neighbor, goal_configs)
+            if path:
+                # If managed to connect to the goal.
+                self.tree.add_edge(neighbor, goal_configs, path=path)
+                if self.visualize:
+                    self.env.draw_line_between_multi_configs(neighbor, goal_configs, path)
+                return True
         return False
 
+    @timefunc
     def find_path(self, start_configs, goal_configs):
         """
         Main function for MRdRRT. Expands tree to find path from start to goal.
@@ -114,7 +116,7 @@ class MRdRRTPlanner(object):
         self.tree.add_node(start_configs)
         success = None
 
-        for i in range(self._MAX_ITER):
+        for i in range(1, self._MAX_ITER + 1):
             self.expand()
             success = self.connect_to_target(goal_configs, i)
             if success:
