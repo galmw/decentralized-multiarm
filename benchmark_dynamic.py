@@ -1,27 +1,3 @@
-# if __name__ == "__main__":
-#     args = parse_args()
-#     config = load_config(args.config)
-#     env_conf = config['environment']
-#     training_conf = config['training']
-#     ray.init()
-#     signal(SIGINT, lambda sig, frame: exit())
-#     output_path = 'rrt_dynamic_benchmark_score.pkl'
-#     benchmark_results = []
-#     continue_benchmark = False
-#     if exists(output_path):
-#         # continue benchmark
-#         benchmark_results = pickle.load(open(output_path, 'rb'))
-#         continue_benchmark = True
-#         finished_task_paths = [r['task']['task_path']
-#                                for r in benchmark_results]
-
-#     task_loader = TaskLoader(
-#         root_dir=args.tasks_path,
-#         shuffle=False,
-#         repeat=False)
-#     # Can change shuffle to True at some later stage
-#     training_conf['task_loader'] = task_loader
-
 #     RealTimeEnv = ray.remote(RealTimeEnv)
 #     envs = [RealTimeEnv.remote(
 #         env_config=env_conf,

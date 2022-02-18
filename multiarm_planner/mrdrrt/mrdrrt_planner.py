@@ -5,6 +5,8 @@ import pickle
 import heapq
 import networkx as nx
 
+from multiarm_planner.profile_utils import timefunc
+
 from .prm_planner import PRMPlanner
 from .implicit_graph import ImplicitGraph
 
@@ -92,6 +94,7 @@ class MRdRRTPlanner(object):
                 return True
         return False
 
+    @timefunc
     def find_path(self, start_configs, goal_configs):
         """
         Main function for MRdRRT. Expands tree to find path from start to goal.

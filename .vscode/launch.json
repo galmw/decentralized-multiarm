@@ -1,7 +1,4 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -19,6 +16,14 @@
             "program": "main.py",
             "console": "integratedTerminal",
             "args" : ["--mode", "mrdrrt", "--tasks_path", "benchmark", "--cache-drrt", "--num_processes", "1", "--gui"]
+        },
+        {
+            "name": "dRRT - No GUI",
+            "type": "python",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "args" : ["--mode", "mrdrrt", "--tasks_path", "benchmark", "--cache-drrt", "--num_processes", "1"]
         },
         {
             "name": "Scene Designer",

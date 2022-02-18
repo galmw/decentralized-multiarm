@@ -51,20 +51,20 @@ class MultiarmEnvironment:
 
     def birrt_from_task(self, task):
         print("[MultiarmEnv] Running BiRRT for task {0}".format(task.id))
-        return self.birrt(start_conf=task.start_config,
-                          goal_conf=task.goal_config,
+        return self.birrt(start_configs=task.start_config,
+                          goal_configs=task.goal_config,
                           ur5_poses=task.base_poses,
                           target_eff_poses=task.target_eff_poses,
                           obstacles=task.obstacles)
 
-    def birrt(self, start_conf, goal_conf,
+    def birrt(self, start_configs, goal_configs,
               ur5_poses, target_eff_poses, obstacles=None, resolutions=0.1, timeout=100000):
-        self.setup_run(ur5_poses, start_conf, target_eff_poses, obstacles)
+        self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
 
         extend_fn = self.ur5_group.get_extend_fn(resolutions)
         collision_fn = self.ur5_group.get_collision_fn()
-        start_conf = list(chain.from_iterable(start_conf))
-        goal_conf = list(chain.from_iterable(goal_conf))
+        start_conf = list(chain.from_iterable(start_configs))
+        goal_conf = list(chain.from_iterable(goal_configs))
         
         path = birrt(start_conf=start_conf,
                      goal_conf=goal_conf,
@@ -83,7 +83,7 @@ class MultiarmEnvironment:
         if path is None:
             return None
         if self.gui:
-            self.demo_path(ur5_poses, start_conf, path)
+            self.demo_path(ur5_poses, start_configs, path)
         return path
 
     def mrdrrt_from_task(self, task, cache_drrt=True):
