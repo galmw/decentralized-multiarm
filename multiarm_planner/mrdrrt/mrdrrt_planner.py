@@ -68,7 +68,8 @@ class MRdRRTPlanner(object):
                     self.implicit_graph.draw_composite_edge(q_near, q_new)
                 if q_new == goal_configs:
                     break
-
+    
+    @timefunc
     def local_connector(self, start, target):
         """
         Borrowed code from DiscoPygal's dRRT implementation.
@@ -164,7 +165,6 @@ class MRdRRTPlanner(object):
         assert len(start_configs) == len(goal_configs), "Start and goal configurations don't match in length"
 
         print("Looking for a path...")
-
         # Put start config in tree
         self.tree.add_node(start_configs)
         success = None
@@ -207,8 +207,8 @@ class MRdRRTPlanner(object):
         prm_graphs = []
         for i in range(len(start_configs)):
             self.env.setup_single_prm(i, start_configs, goal_configs, **kwargs)
-            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=150, visualize=False)
-            prm_planner.generate_roadmap(start_configs[i], goal_configs[i])
+            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=50, visualize=False)
+            assert prm_planner.generate_roadmap(start_configs[i], goal_configs[i])
             prm_graphs.append(prm_planner.graph)
         self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
 
@@ -222,5 +222,8 @@ class MRdRRTPlanner(object):
             self.generate_implicit_graph_with_prm(start_configs, goal_configs, ur5_poses=ur5_poses)
         if cache_drrt:
             self.cache_loaded_graphs_to_file(task_path)
+            
+        # Make sure roadmaps are good enough
+        assert all(nx.algorithms.has_path(roadmap, start_configs[i], goal_configs[i]) for i, roadmap in enumerate(self.implicit_graph.roadmaps))
 
 

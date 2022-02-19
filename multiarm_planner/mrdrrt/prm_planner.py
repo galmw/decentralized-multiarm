@@ -1,3 +1,4 @@
+import heapq
 import numpy as np
 import networkx as nx
 import sklearn.neighbors
@@ -21,7 +22,7 @@ class PRMPlanner(object):
         Standard PRM algorithm.
         """
 
-        print("Generating roadmap...")
+        print(f"Generating roadmap with initial {self.n_nodes} nodes...")
         self.graph.add_nodes_from([tuple(start), tuple(goal)])
 
         # Sample landmarks
@@ -50,14 +51,30 @@ class PRMPlanner(object):
                         if self.visualize:
                             self.env.draw_line_between_configs(node, neighbor, path=path)
 
-            if i % 100 == 0:
+            if i % 50 == 0:
                 print('Connected', i, 'landmarks to their nearest neighbors')
             i += 1
         
-        if nx.has_path(self.graph, start, goal):
-            print('PRM ran succesfully')
-            return True
-        else:
-            print('PRM failed')
-            return False
+        while not nx.has_path(self.graph, start, goal):
+            print("No valid path in PRM. Adding more samples")
+            self.grow(50)
+        return True
 
+    def grow(self, num_samples):
+        """
+        Add samples to existing PRM. Slower than generating from scrath
+        """
+        new_nodes = [self.env.sample_free_config() for _ in range(num_samples)]
+        print(num_samples, "more landmarks sampled")
+        map(self.graph.add_node, new_nodes)
+
+        for node in new_nodes:
+            neighbors = heapq.nsmallest(self.nn_k, self.graph.nodes, key=lambda q: self.env.distance(node, q))
+            for neighbor in neighbors:
+                if neighbor != node:
+                    path = self.env.check_path_collision_free(node, neighbor)
+                    if path:
+                        self.graph.add_edge(node, neighbor, weight=self.env.distance(node, neighbor), path=path, path_start=node)
+                        if self.visualize:
+                            self.env.draw_line_between_configs(node, neighbor, path=path)
+        print(f"Grew PRM by {num_samples} nodes")
