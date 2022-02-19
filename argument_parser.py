@@ -7,6 +7,8 @@ def main_parse_args():
                         help="path of directory containing tasks")
     parser.add_argument('--gui', action='store_true',
                         default=False, help='Run headless or render')
+    parser.add_argument('--visualize', action='store_true',
+                        default=False, help='If running with gui - show running process (slows down performance)')
     parser.add_argument('--num_processes', type=int,
                         default=16, help='How many processes to parallelize')
     parser.add_argument('--mode',
@@ -24,6 +26,9 @@ def main_parse_args():
         if args.tasks_path is None:
             print("Please supply tasks path with --tasks_path")
             exit()
+    
+    if args.visualize and not args.gui:
+        print("Cannot visualize run without showing GUI.")
 
     if args.mode == 'rrt' or args.mode == 'drrt':
         require_tasks()

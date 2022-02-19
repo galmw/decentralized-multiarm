@@ -15,7 +15,7 @@ from .mrdrrt.mrdrrt_planner import MRdRRTPlanner
 class MultiarmEnvironment:
     _MAX_UR5_COUNT = 4
 
-    def __init__(self, gui=False):
+    def __init__(self, gui=True, visualize=False):
         from multiarm_planner.utils import create_ur5s, Target
         print("[MultiarmEnv] Setting up multiarm environment")
         # set up simulator
@@ -23,6 +23,7 @@ class MultiarmEnvironment:
         p.loadURDF("plane.urdf", [0, 0, -0.01])
 
         self.gui = gui
+        self.visualize = visualize
         self.obstacles = None
 
         def create_ur5s_fn():
@@ -67,7 +68,7 @@ class MultiarmEnvironment:
                      collision=collision_fn,
                      iterations=10000,
                      smooth=5,
-                     visualize=self.gui,
+                     visualize=self.visualize,
                      fk=self.ur5_group.forward_kinematics,
                      group=True,
                      greedy=True,
@@ -96,7 +97,7 @@ class MultiarmEnvironment:
         goal_configs = tuple(tuple(conf) for conf in goal_configs)
         self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
         env = MultiRobotUR5Env(self.ur5_group, resolutions)        
-        mrdrrt = MRdRRTPlanner(env, visualize=True)
+        mrdrrt = MRdRRTPlanner(env, visualize=self.visualize)
 
         mrdrrt.get_implicit_graph(start_configs=start_configs, goal_configs=goal_configs, ur5_poses=ur5_poses,
                                     cache_drrt=cache_drrt, task_path=task_path)

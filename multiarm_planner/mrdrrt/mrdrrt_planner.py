@@ -4,6 +4,7 @@ import os
 import pickle
 import heapq
 import networkx as nx
+from multiarm_planner.mrdrrt.robot_env import MultiRobotEnv
 
 from multiarm_planner.profile_utils import timefunc
 
@@ -25,9 +26,9 @@ class MRdRRTPlanner(object):
     _EXPAND_N = 20
     _MAX_ITER = 5000
 
-    def __init__(self, env, visualize=False):
+    def __init__(self, env: MultiRobotEnv, visualize=False):
         self.env = env
-        self.implicit_graph = None
+        self.implicit_graph = None # type: ImplicitGraph
         self.tree = nx.Graph()
         self.visualize = visualize
 
@@ -51,7 +52,8 @@ class MRdRRTPlanner(object):
         neighbors = heapq.nsmallest(k, self.tree.nodes, key=lambda node: self.env.composite_distance(node, config))
         return neighbors
     
-    def expand(self):
+    @timefunc
+    def expand(self, goal_configs):
         """
         Takes random samples and tries to expand tree in direction of sample.
         """
@@ -64,6 +66,8 @@ class MRdRRTPlanner(object):
                 self.tree.add_edge(q_near, q_new)
                 if self.visualize:
                     self.implicit_graph.draw_composite_edge(q_near, q_new)
+                if q_new == goal_configs:
+                    break
 
     def local_connector(self, start, target):
         """
@@ -81,7 +85,7 @@ class MRdRRTPlanner(object):
         priority_graph = nx.DiGraph()
         priority_graph.add_nodes_from(range(num_robots))
         for i in range(num_robots):
-            for j, roadmap_j in enumerate(self.implicit_graph.roadmaps):
+            for j in range(num_robots):
                 if i == j:
                     continue
                 # Robot i stays in place in its target
@@ -89,7 +93,7 @@ class MRdRRTPlanner(object):
 
                 # Robot j moves along its path
                 for k in range(len(paths[j]) - 1):
-                    edge_j = self.implicit_graph.get_edge_from_roadmap(j, paths[j][k], paths[j][k + 1])
+                    edge_j = self.implicit_graph.get_single_roadmap_edge_path(j, paths[j][k], paths[j][k + 1])
                     if self.env.two_robots_collision_on_paths(i, edge_i, j, edge_j):
                         # If j collides with i when i is in its target, j needs to reach the target before i 
                         priority_graph.add_edge(j, i)
@@ -99,7 +103,7 @@ class MRdRRTPlanner(object):
 
                 # Robot j moves along its path again
                 for k in range(len(paths[j])-1):
-                    edge_j = self.implicit_graph.get_edge_from_roadmap(j, paths[j][k], paths[j][k + 1])
+                    edge_j = self.implicit_graph.get_single_roadmap_edge_path(j, paths[j][k], paths[j][k + 1])
                     if self.env.two_robots_collision_on_paths(i, edge_i, j, edge_j):
                         # If j collides with i when i is in its start, i needs to reach the target before j
                         priority_graph.add_edge(i, j)
@@ -117,6 +121,8 @@ class MRdRRTPlanner(object):
                 new_ptr[r] = v
                 new_ptr = tuple(new_ptr)
                 self.tree.add_edge(curr_vertex, new_ptr)
+                if self.visualize:
+                    self.implicit_graph.draw_composite_edge(curr_vertex, new_ptr)
                 curr_vertex = new_ptr
                 
         assert(curr_vertex == target) # We should have reached the destination
@@ -128,14 +134,13 @@ class MRdRRTPlanner(object):
         # return True
         return True
 
+    @timefunc
     def connect_to_target(self, goal_configs, iteration):
         """
         Check if it's possible to get to goal from closest nodes in current tree.
         Called at the end of each iteration.
         Input: list of goal configurations (goal composite config)
         """
-        # Should be improved to: neighbor = self.tree.k_nearest_neighbors(goal_configs, int(math.log(iteration + 2, 2)))
-        # neighbor = self.tree_nearest_neighbor(goal_configs)
         neighbors = self.tree_k_nearest_neighbors(goal_configs, int(math.log(iteration + 1, 2)))
         for neighbor in neighbors:
             if neighbor == goal_configs:
@@ -165,7 +170,7 @@ class MRdRRTPlanner(object):
         success = None
 
         for i in range(1, self._MAX_ITER + 1):
-            self.expand()
+            self.expand(goal_configs)
             success = self.connect_to_target(goal_configs, i)
             if success:
                 print("Found a path! Constructing final path now..")
@@ -202,7 +207,7 @@ class MRdRRTPlanner(object):
         prm_graphs = []
         for i in range(len(start_configs)):
             self.env.setup_single_prm(i, start_configs, goal_configs, **kwargs)
-            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=50, visualize=False)
+            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=150, visualize=False)
             prm_planner.generate_roadmap(start_configs[i], goal_configs[i])
             prm_graphs.append(prm_planner.graph)
         self.implicit_graph = ImplicitGraph(self.env, prm_graphs)

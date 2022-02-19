@@ -15,7 +15,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt", "--num_processes", "1", "--gui"]
+            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt", "--num_processes", "1", "--gui", "--visualize"]
         },
         {
             "name": "dRRT - No GUI",

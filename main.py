@@ -11,7 +11,7 @@ def main(args):
 
     task_loader = TaskLoader(root_dir=args.tasks_path, shuffle=False, repeat=False)
     tasks = [t for t in task_loader]
-    mutiarm_env = MultiarmEnvironment(gui=args.gui)
+    mutiarm_env = MultiarmEnvironment(gui=args.gui, visualize=args.visualize)
 
     for i in range(len(tasks)):
         # ray.get(rrt.birrt_from_task.remote(tasks[i]))

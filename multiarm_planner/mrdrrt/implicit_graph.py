@@ -1,6 +1,8 @@
 import numpy as np
 import itertools
 
+from multiarm_planner.mrdrrt import robot_env
+
 
 def unit_vector(vector):
     """
@@ -34,25 +36,25 @@ class ImplicitGraph(object):
         self.roadmaps = roadmaps
         self.env = env
 
-    def _get_best_neighbor_in_individual_graph(self, index, q_near, q_rand):
-        """
-        Note: "Best" in dRRT is supposed to mean "with best angle".
-        """
-        graph = self.roadmaps[index]
-        graph_env = self.env.robot_envs[index]
-        target_vector = graph_env.difference(q_rand, q_near)
-        min_angle = float("inf")
-        best = None
+    # def _get_best_neighbor_in_individual_graph(self, index, q_near, q_rand):
+    #     """
+    #     Note: "Best" in dRRT is supposed to mean "with best angle".
+    #     """
+    #     graph = self.roadmaps[index]
+    #     graph_env = self.env.robot_envs[index]
+    #     target_vector = graph_env.difference(q_rand, q_near)
+    #     min_angle = float("inf")
+    #     best = None
 
-        for neighbor in graph.neighbors(q_near):
-            vector = graph_env.difference(neighbor, q_near)
-            angle = angle_between(target_vector, vector)
-            if (angle < min_angle):
-                min_angle = angle
-                best = neighbor
+    #     for neighbor in graph.neighbors(q_near):
+    #         vector = graph_env.difference(neighbor, q_near)
+    #         angle = angle_between(target_vector, vector)
+    #         if (angle < min_angle):
+    #             min_angle = angle
+    #             best = neighbor
 
-        return best
-        
+    #     return best
+
     def clean_neighbor_movement(self, q, neighbor):
         if q == neighbor:
             return None
@@ -76,23 +78,33 @@ class ImplicitGraph(object):
             best_neighbor = self.clean_neighbor_movement(q_near, best_neighbor)
         return best_neighbor
 
+    def _get_best_neighbor_in_individual_graph(self, index, q_near, q_rand):
+        """
+        Note: "Best" in dRRT is supposed to mean "with best angle".
+        """
+        roadmap = self.roadmaps[index]
+        robot_env = self.env.robot_envs[index]
+        return min(roadmap.neighbors(q_near), key=lambda q: robot_env.distance(q, q_rand))
+
     def draw_composite_edge(self, p, q):
         movement_path = self.create_movement_path_on_tensor_edge(p, q)
         self.env.draw_line_between_multi_configs(p, q, path=movement_path)
 
     def get_tensor_edge_paths(self, p, q):
-        paths = []
-        for i, roadmap in enumerate(self.roadmaps):
-            if p[i] == q[i]:
-                paths.append([p[i]])
-            else:
-                edge_i = roadmap.edges[p[i], q[i]]
-                path = edge_i['path']
-                if edge_i['path_start'] == q[i]:
-                    path = path[::-1]
-                paths.append(path)
+        paths = [self.get_single_roadmap_edge_path(i, p[i], q[i]) for i in range(len(self.roadmaps))]
         return paths
     
+    def get_single_roadmap_edge_path(self, i, p, q):
+        roadmap = self.roadmaps[i]
+        if p == q:
+            return [p]
+        else:
+            edge_i = roadmap.edges[p, q]
+            path = edge_i['path']
+            if edge_i['path_start'] == q:
+                path = path[::-1]
+            return path
+
     def create_movement_path_on_tensor_edge(self, p, q):
         """
         Take two points on the tensor roadmap 
