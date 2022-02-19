@@ -1,6 +1,6 @@
 import ray
 from signal import signal, SIGINT
-from argument_parser import parse_args
+from argument_parser import main_parse_args
 from multiarm_planner.rrt import MultiarmEnvironment
 from multiarm_planner.tasks import TaskLoader
 
@@ -22,6 +22,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = main_parse_args()
     main(args)
 

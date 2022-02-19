@@ -9,5 +9,9 @@ class Obstacle(object):
         p.removeBody(self.body_id)
 
     @staticmethod
+    def load_obstacle(obstacle):
+        return Obstacle(obstacle['urdf_file'], obstacle['position'], obstacle['scale'])
+
+    @staticmethod
     def load_obstacles(obstacles):
-        return list(Obstacle(obstacle['urdf_file'], obstacle['position'], obstacle['scale']) for obstacle in obstacles)
+        return list(Obstacle.load_obstacle(obstacle) for obstacle in obstacles)

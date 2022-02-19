@@ -39,6 +39,8 @@ class MRdRRTPlanner(object):
         explored yet, and is closest (by sum of euclidean distances) to qnear.
         """
         q_new = self.implicit_graph.get_best_composite_neighbor(q_near, q_rand)
+        if not q_new:
+            return None, None
         path = self.local_connector(q_near, q_new)
         if path:
             return q_new, path
@@ -148,7 +150,7 @@ class MRdRRTPlanner(object):
         prm_graphs = []
         for i in range(len(start_configs)):
             self.env.setup_single_prm(i, start_configs, goal_configs, **kwargs)
-            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=50, visualize=self.visualize)
+            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=50, visualize=False)
             prm_planner.generate_roadmap(start_configs[i], goal_configs[i])
             prm_graphs.append(prm_planner.graph)
         self.implicit_graph = ImplicitGraph(self.env, prm_graphs)

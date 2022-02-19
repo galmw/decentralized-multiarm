@@ -41,13 +41,6 @@ class MultiarmEnvironment:
         self.ur5_group.setup(ur5_poses, start_conf)
         del self.obstacles
         self.obstacles = Obstacle.load_obstacles(obstacles) if obstacles else None
-    
-    def load_scene_from_task(self, task, view_start=True):
-        print("[MultiarmEnv] Loading scene from task {0}".format(task.id))
-        if view_start:
-            self.setup_run(task.base_poses, task.start_config, task.target_eff_poses, task.obstacles)
-        else:
-            self.setup_run(task.base_poses, task.goal_config, task.target_eff_poses, task.obstacles)
 
     def birrt_from_task(self, task):
         print("[MultiarmEnv] Running BiRRT for task {0}".format(task.id))

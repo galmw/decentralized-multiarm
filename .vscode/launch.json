@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "rrt", "--tasks_path", "benchmark", "--num_processes", "1", "--gui"]
+            "args" : ["--mode", "rrt", "--tasks-path", "benchmark", "--num_processes", "1", "--gui"]
         },
         {
             "name": "dRRT",
@@ -15,7 +15,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "mrdrrt", "--tasks_path", "benchmark", "--cache-drrt", "--num_processes", "1", "--gui"]
+            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt", "--num_processes", "1", "--gui"]
         },
         {
             "name": "dRRT - No GUI",
@@ -23,15 +23,15 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "mrdrrt", "--tasks_path", "benchmark", "--cache-drrt", "--num_processes", "1"]
+            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt", "--num_processes", "1"]
         },
         {
-            "name": "Scene Designer",
+            "name": "Task Designer",
             "type": "python",
             "request": "launch",
-            "program": "scene_designer.py",
+            "program": "task_designer.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "expert", "--tasks_path", "benchmark", "--name", "rrt_run", "--config", "rrt_run/config.json", "--num_processes", "1", "--gui"]
+            "args" : ["--tasks-path", "benchmark", "--gui"]
         },
     ]
 }

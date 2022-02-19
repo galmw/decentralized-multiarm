@@ -445,8 +445,7 @@ def get_self_link_pairs(body, joints, disabled_collisions=set()):
 
 
 def get_collision_fn(body, joints, obstacles, attachments, self_collisions, disabled_collisions):
-    check_link_pairs = get_self_link_pairs(
-        body, joints, disabled_collisions) if self_collisions else []
+    check_link_pairs = get_self_link_pairs(body, joints, disabled_collisions) if self_collisions else []
     moving_bodies = [body] + [attachment.child for attachment in attachments]
     if obstacles is None:
         obstacles = list(set(get_bodies()) - set(moving_bodies))

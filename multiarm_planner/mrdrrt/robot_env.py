@@ -59,6 +59,10 @@ class RobotEnv(metaclass=ABCMeta):
 
 class MultiRobotEnv(metaclass=ABCMeta):
     @abstractmethod
+    def two_robots_collision_on_paths(self, robot1, path1, robot2, path2):
+        pass
+
+    @abstractmethod
     def sample_free_multi_config():
         pass
 
