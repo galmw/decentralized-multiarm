@@ -198,7 +198,8 @@ class MRdRRTPlanner(object):
         with open(pickle_path, "wb") as f:
             pickle.dump(self.implicit_graph.roadmaps, f)
         print("Saved roadmaps.")
-
+    
+    @timefunc
     def generate_implicit_graph_with_prm(self, start_configs, goal_configs, n_nodes=50, **kwargs):
         prm_graphs = []
         for i in range(len(start_configs)):

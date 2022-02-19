@@ -34,7 +34,7 @@ def rrt_connect(q1,
     edges = []
     if visualize:
         color1, color2 = [0, 1, 0], [0, 0, 1]
-    for _ in irange(iterations):
+    for iteration in irange(iterations):
         if float(time() - start_time) > timeout:
             break
         if len(nodes1) > len(nodes2):
@@ -96,6 +96,8 @@ def rrt_connect(q1,
                 with open('edges.pkl', 'wb') as f:
                     pickle.dump(edges, f)
             return configs(path1[:-1] + path2[::-1])
+        if iteration % 100 == 0:
+            print(f"Ran {iteration} iterations of RRT")
     return None
 
 

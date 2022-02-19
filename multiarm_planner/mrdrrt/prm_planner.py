@@ -37,7 +37,6 @@ class PRMPlanner(object):
         nearest_neighbors.fit(_points)
 
         # Try to connect neighbors
-        print('Connecting landmarks')
         for i, node in enumerate(points):
             # Obtain the K nearest neighbors
             k_neighbors = nearest_neighbors.kneighbors([_points[i]], return_distance=False)[0]
@@ -58,6 +57,7 @@ class PRMPlanner(object):
         while not nx.has_path(self.graph, start, goal):
             print("No valid path in PRM. Adding more samples")
             self.grow(50)
+        print(f"[PRM] Got valid roadmap with {len(self.graph.nodes)} nodes")
         return True
 
     def grow(self, num_samples):
