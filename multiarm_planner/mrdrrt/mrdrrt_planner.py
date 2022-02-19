@@ -72,7 +72,9 @@ class MRdRRTPlanner(object):
     @timefunc
     def local_connector(self, start, target):
         """
-        Borrowed code from DiscoPygal's dRRT implementation.
+        We do that by the method proposed by de Berg:
+        http://www.roboticsproceedings.org/rss05/p18.html.
+        Borrowed some code from DiscoPygal's dRRT implementation.
         """
         num_robots = len(self.implicit_graph.roadmaps)
         paths = []
@@ -127,12 +129,6 @@ class MRdRRTPlanner(object):
                 curr_vertex = new_ptr
                 
         assert(curr_vertex == target) # We should have reached the destination
-
-        # # If managed to connect to the goal.
-        # self.tree.add_edge(neighbor, goal_configs, path=path)
-        # # if self.visualize:
-        #     # self.env.draw_line_between_multi_configs(neighbor, goal_configs, path)
-        # return True
         return True
 
     @timefunc
@@ -203,23 +199,23 @@ class MRdRRTPlanner(object):
             pickle.dump(self.implicit_graph.roadmaps, f)
         print("Saved roadmaps.")
 
-    def generate_implicit_graph_with_prm(self, start_configs, goal_configs, **kwargs):
+    def generate_implicit_graph_with_prm(self, start_configs, goal_configs, n_nodes=50, **kwargs):
         prm_graphs = []
         for i in range(len(start_configs)):
             self.env.setup_single_prm(i, start_configs, goal_configs, **kwargs)
-            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=50, visualize=False)
+            prm_planner = PRMPlanner(self.env.robot_envs[i], n_nodes=n_nodes, visualize=False)
             assert prm_planner.generate_roadmap(start_configs[i], goal_configs[i])
             prm_graphs.append(prm_planner.graph)
         self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
 
-    def get_implicit_graph(self, start_configs, goal_configs, ur5_poses, cache_drrt, task_path):
+    def get_implicit_graph(self, start_configs, goal_configs, ur5_poses, cache_drrt, task_path, n_nodes=50):
         if cache_drrt:
             try:
                 self.load_implicit_graph_from_cache_file(task_path)
             except:
                 print("Can't load implicit graph from file.")
         if not self.implicit_graph:
-            self.generate_implicit_graph_with_prm(start_configs, goal_configs, ur5_poses=ur5_poses)
+            self.generate_implicit_graph_with_prm(start_configs, goal_configs, n_nodes=n_nodes, ur5_poses=ur5_poses)
         if cache_drrt:
             self.cache_loaded_graphs_to_file(task_path)
             

@@ -7,7 +7,15 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "rrt", "--tasks-path", "benchmark", "--num_processes", "1", "--gui"]
+            "args" : ["--mode", "rrt", "--tasks-path", "benchmark", "--gui"]
+        },
+        {
+            "name": "dRRT - Visualize (slow)",
+            "type": "python",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt",  "--gui", "--visualize", "--num-prm-nodes", "300"]
         },
         {
             "name": "dRRT",
@@ -15,15 +23,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt", "--num_processes", "1", "--gui", "--visualize"]
-        },
-        {
-            "name": "dRRT - No GUI",
-            "type": "python",
-            "request": "launch",
-            "program": "main.py",
-            "console": "integratedTerminal",
-            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt", "--num_processes", "1"]
+            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt",  "--gui"]
         },
         {
             "name": "Task Designer",

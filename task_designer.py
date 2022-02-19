@@ -17,11 +17,11 @@ class TaskDesigner(object):
         self.multiarm_env = MultiarmEnvironment(gui=args.gui)
         self.task = None
 
-    def load_task_from_file(self, task_name, view_start_config=True):
+    def load_task_from_file(self, task_name):
         print("[TaskDesigner] Loading Task from task file {0}".format(task_name))
         path = os.path.join(self.args.tasks_path, task_name)
         self.task = Task.from_file(path)
-        self.setup_task(view_start_config)
+        self.setup_task()
 
     def save_task_to_file(self, task_name):
         path = os.path.join(self.args.tasks_path, task_name)
@@ -29,6 +29,9 @@ class TaskDesigner(object):
         self.task.save()
 
     def setup_task(self, view_start_config=True):
+        if not self.task:
+            print("Load task from file first or create one.")
+            return
         if view_start_config:
             self.multiarm_env.setup_run(self.task.base_poses, self.task.start_config, self.task.target_eff_poses, self.task.obstacles)
         else:
@@ -38,27 +41,23 @@ class TaskDesigner(object):
     def active_ur5s(self):
         return self.multiarm_env.ur5_group.active_controllers
     
-    def reset(self, ur5s_count):
+    def reset_robots(self, ur5s_count):
         self.multiarm_env.ur5_group.enable_ur5s(count=ur5s_count)
         self._randomize_positions()
         for ur5 in self.active_ur5s:
             ur5.reset()
         self.randomize_collision_free_configs()
 
-    def _sample_random_base_position(self):
-        return np.array([random.uniform(-1, 1), random.uniform(-1, 1), 0])
+    def _sample_random_base_position(self, space_range=(-1, 1)):
+        return np.array([random.uniform(*space_range), random.uniform(*space_range), 0])
 
-    def _randomize_positions(self, min_pair_robot_dist=0.2):
+    def _randomize_positions(self, min_pair_robot_dist=0.2, space_range=(-1, 1)):
         positions = None
         assert len(self.active_ur5s) > 0
         while True:
             positions = []
             for _ in range(len(self.active_ur5s)):
-                if len(positions) == 0:
-                    positions.append(self._sample_random_base_position())
-                else:
-                    positions.append(positions[-1] + self._sample_random_base_position())
-
+                positions.append(self._sample_random_base_position(space_range))
             distances = [np.linalg.norm(pos1 - pos2) for pos1, pos2 in itertools.product(positions, repeat=2)]
             if all([d == 0.0 or (d > min_pair_robot_dist) for d in distances]):
                 for ur5, position in zip(self.active_ur5s, positions):
@@ -81,8 +80,8 @@ class TaskDesigner(object):
                 # Collision free initial states within joint limits
                 break
 
-    def create_task_with_robots(self, ur5s_count):
-        self.reset(ur5s_count)
+    def create_task(self):
+        self.randomize_collision_free_configs()
         start_config = [ur5.get_arm_joint_values() for ur5 in self.active_ur5s]
         self.randomize_collision_free_configs()
         goal_config = [ur5.get_arm_joint_values() for ur5 in self.active_ur5s]
@@ -91,27 +90,30 @@ class TaskDesigner(object):
                     goal_config=goal_config,
                     start_config=start_config,
                     target_eff_poses=[ur5.get_end_effector_pose() for ur5 in self.active_ur5s])
+        self.setup_task()
 
-    def _sample_random_obstacle(self):
-        scale = random.uniform(0.1, 0.5)
-        position = [random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(scale / 2, 1)]
+    def _sample_random_obstacle(self, scale=None, position_range=(-1, 1)):
+        scale = scale or random.uniform(0.1, 0.5)
+        position = [random.uniform(*position_range), random.uniform(*position_range), random.uniform(scale / 2, 0.7)]
         obs = {'urdf_file': 'cube.urdf', 'position': position, 'scale': scale}
         return obs
 
-    def create_random_cube_obstacle(self):
+    def create_random_cube_obstacle(self, scale=None, position_range=(-1, 1)):
         while True:
-            obs = self._sample_random_obstacle()
-            # Check collision for both start and end configs
+            obs = self._sample_random_obstacle(scale, position_range)
             self.task.obstacles.append(obs)
-            self.setup_task(True)
-            cube_id = self.multiarm_env.obstacles[-1].body_id
-            if any(ur5.check_collision() or ur5.violates_limits() for ur5 in self.active_ur5s):
-                self.task.obstacles.remove(obs)
-                continue
+            # Check collision with end configs
             self.setup_task(False)
             if any(ur5.check_collision() or ur5.violates_limits() for ur5 in self.active_ur5s):
                 self.task.obstacles.remove(obs)
                 continue
+            # Check collision with start configs
+            self.setup_task()
+            cube_id = self.multiarm_env.obstacles[-1].body_id
+            if any(ur5.check_collision() or ur5.violates_limits() for ur5 in self.active_ur5s):
+                self.task.obstacles.remove(obs)
+                continue
+            # Check collision with other cubes
             if any(pairwise_collision(cube_id, o.body_id) for o in self.multiarm_env.obstacles[:-1]):
                 self.task.obstacles.remove(obs)
                 continue

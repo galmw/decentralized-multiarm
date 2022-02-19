@@ -9,8 +9,6 @@ def main_parse_args():
                         default=False, help='Run headless or render')
     parser.add_argument('--visualize', action='store_true',
                         default=False, help='If running with gui - show running process (slows down performance)')
-    parser.add_argument('--num_processes', type=int,
-                        default=16, help='How many processes to parallelize')
     parser.add_argument('--mode',
                         choices=[
                             'rrt',
@@ -19,7 +17,8 @@ def main_parse_args():
                         default='rrt')
     parser.add_argument('--cache-drrt', action='store_true',
                         default=True, help='Cache drrt implicit graphs for later use')
-
+    parser.add_argument('--num-prm-nodes', type=int,
+                        default=50, help='How many nodes to setup each PRM roadmap')
     args = parser.parse_args()
 
     def require_tasks():

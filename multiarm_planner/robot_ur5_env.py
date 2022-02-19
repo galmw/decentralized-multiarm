@@ -59,7 +59,7 @@ class MultiRobotUR5Env(MultiRobotEnv):
         """
         Returns array of randomly sampled node in composite config space.
         """
-        return tuple(robot_env.sample_free_config() for robot_env in self.robot_envs)
+        return tuple(robot_env.sample_free_config() for robot_env in self.robot_envs) ## TODO - this is shittty AF~!
 
     def composite_distance(self, q1, q2):
         """

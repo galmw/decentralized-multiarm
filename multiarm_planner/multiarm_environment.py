@@ -13,7 +13,7 @@ from .mrdrrt.mrdrrt_planner import MRdRRTPlanner
 
 
 class MultiarmEnvironment:
-    _MAX_UR5_COUNT = 4
+    _MAX_UR5_COUNT = 10
 
     def __init__(self, gui=True, visualize=False):
         from multiarm_planner.utils import create_ur5s, Target
@@ -80,7 +80,7 @@ class MultiarmEnvironment:
             self.demo_path(ur5_poses, start_configs, path)
         return path
 
-    def mrdrrt_from_task(self, task, cache_drrt=True):
+    def mrdrrt_from_task(self, task, cache_drrt=True, num_prm_nodes=50):
         print("[MultiarmEnv] Running MrDRRT for task {0}".format(task.id))
         return self.mrdrrt(start_configs=task.start_config,
                            goal_configs=task.goal_config,
@@ -88,11 +88,12 @@ class MultiarmEnvironment:
                            target_eff_poses=task.target_eff_poses,
                            obstacles=task.obstacles,
                            task_path=task.task_path,
-                           cache_drrt=cache_drrt)
+                           cache_drrt=cache_drrt,
+                           num_prm_nodes=num_prm_nodes)
                            
     def mrdrrt(self, start_configs, goal_configs,
               ur5_poses, target_eff_poses, obstacles=None,
-              resolutions=0.1, timeout=100000, task_path=None, cache_drrt=True):
+              resolutions=0.1, task_path=None, cache_drrt=True, num_prm_nodes=50):
         start_configs = tuple(tuple(conf) for conf in start_configs)
         goal_configs = tuple(tuple(conf) for conf in goal_configs)
         self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
@@ -100,7 +101,7 @@ class MultiarmEnvironment:
         mrdrrt = MRdRRTPlanner(env, visualize=self.visualize)
 
         mrdrrt.get_implicit_graph(start_configs=start_configs, goal_configs=goal_configs, ur5_poses=ur5_poses,
-                                    cache_drrt=cache_drrt, task_path=task_path)
+                                    cache_drrt=cache_drrt, task_path=task_path, n_nodes=num_prm_nodes)
 
         self.ur5_group.setup(ur5_poses, start_configs)
         path = mrdrrt.find_path(start_configs, goal_configs)

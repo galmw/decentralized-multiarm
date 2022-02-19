@@ -13,10 +13,10 @@ def main(args):
     tasks = [t for t in task_loader]
     mutiarm_env = MultiarmEnvironment(gui=args.gui, visualize=args.visualize)
 
+
     for i in range(len(tasks)):
-        # ray.get(rrt.birrt_from_task.remote(tasks[i]))
         if args.mode == 'mrdrrt':
-            mutiarm_env.mrdrrt_from_task(tasks[i], cache_drrt=args.cache_drrt)
+            mutiarm_env.mrdrrt_from_task(tasks[i], cache_drrt=args.cache_drrt, num_prm_nodes=args.num_prm_nodes)
         elif args.mode == 'rrt':
             mutiarm_env.birrt_from_task(tasks[i])
 

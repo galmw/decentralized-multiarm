@@ -1,4 +1,4 @@
-import ray
+import os
 from time import sleep
 from decimal import Decimal
 from itertools import product
@@ -43,12 +43,8 @@ class Task:
             self.id = str(basename(self.task_path)).split('.')[0]
         else:
             self.id = -1
-        if difficulty is not None:
-            self.difficulty = difficulty
-        else:
-            self.difficulty = Task.compute_task_difficulty(self)
-            self.save()
-
+        self.difficulty = difficulty
+        
     def save(self):
         if self.task_path is not None:
             dump(self.to_json(), open(self.task_path, 'w'), indent=4)
@@ -194,10 +190,10 @@ class Task:
 
 class TaskLoader:
     def __init__(self, root_dir, shuffle=False, repeat=True):
-        if exists(root_dir + 'all.txt'):
+        if exists(os.path.join(root_dir, 'all.txt')):
             print("[TaskLoader] Getting tasks from all.txt")
-            with open(root_dir + 'all.txt', 'r') as f:
-                self.files = [abspath(root_dir + file_path.rstrip())
+            with open(os.path.join(root_dir, 'all.txt')) as f:
+                self.files = [abspath(os.path.join(root_dir, file_path.rstrip()))
                               for file_path in f.readlines()]
         else:
             self.files = [abspath(file_name)
