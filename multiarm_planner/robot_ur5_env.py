@@ -43,21 +43,13 @@ class MultiRobotUR5Env(MultiRobotEnv):
     def two_robots_collision_on_paths(self, robot1, path1, robot2, path2):
         ur5_a = self.ur5_group.active_controllers[robot1]
         ur5_b = self.ur5_group.active_controllers[robot2]
-        for q1, q2 in zip(path1, path2):
-            ur5_a.set_arm_joints(q1)
-            ur5_b.set_arm_joints(q2)
+        for q1, q2 in itertools.zip_longest(path1, path2):
+            if q1:
+                ur5_a.set_arm_joints(q1)
+            if q2:
+                ur5_b.set_arm_joints(q2)
             if pybullet_utils.pairwise_collision(ur5_a.body_id, ur5_b.body_id):
                 return True
-        if len(path1) > len(path2):
-            for q1 in path1[len(path2):]:
-                ur5_a.set_arm_joints(q1)
-                if pybullet_utils.pairwise_collision(ur5_a.body_id, ur5_b.body_id):
-                    return True
-        elif len(path2) > len(path1):
-            for q2 in path2[len(path1):]:
-                ur5_b.set_arm_joints(q2)
-                if pybullet_utils.pairwise_collision(ur5_a.body_id, ur5_b.body_id):
-                    return True
         return False
 
     def multi_forward_kinematics(self, q):

@@ -46,7 +46,7 @@ class PRMPlanner(object):
                     assert i != j # Verify no loops
                     path = self.env.check_path_collision_free(node, neighbor)
                     if path:
-                        self.graph.add_edge(node, neighbor, path=path)
+                        self.graph.add_edge(node, neighbor, weight=self.env.distance(node, neighbor), path=path, path_start=node)
                         if self.visualize:
                             self.env.draw_line_between_configs(node, neighbor, path=path)
 

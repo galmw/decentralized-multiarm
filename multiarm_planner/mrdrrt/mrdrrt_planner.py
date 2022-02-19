@@ -8,7 +8,7 @@ import networkx as nx
 from multiarm_planner.profile_utils import timefunc
 
 from .prm_planner import PRMPlanner
-from .implicit_graph import ImplicitGraph
+from .implicit_graph import ImplicitGraph, tensor_node_to_vector
 
 
 class MRdRRTPlanner(object):
@@ -39,12 +39,7 @@ class MRdRRTPlanner(object):
         explored yet, and is closest (by sum of euclidean distances) to qnear.
         """
         q_new = self.implicit_graph.get_best_composite_neighbor(q_near, q_rand)
-        if not q_new:
-            return None, None
-        path = self.local_connector(q_near, q_new)
-        if path:
-            return q_new, path
-        return None, None
+        return q_new
 
     def tree_nearest_neighbor(self, config):
         return min(self.tree.nodes, key=lambda node: self.env.composite_distance(node, config))
@@ -63,16 +58,75 @@ class MRdRRTPlanner(object):
         for _ in range(self._EXPAND_N):
             q_rand = self.env.sample_free_multi_config()
             q_near = self.tree_nearest_neighbor(q_rand)
-            q_new, path = self.oracle(q_near, q_rand)
+            q_new = self.oracle(q_near, q_rand)
 
             if q_new and q_new not in self.tree.nodes:
-                self.tree.add_edge(q_near, q_new, path=path)
+                self.tree.add_edge(q_near, q_new)
                 if self.visualize:
-                    self.env.draw_line_between_multi_configs(q_near, q_new, path)
+                    self.implicit_graph.draw_composite_edge(q_near, q_new)
 
-    def local_connector(self, q1, q2):
-        # Should at some point replace with better local connector that uses DAG algorithms.
-        return self.env.check_path_collision_free(q1, q2)
+    def local_connector(self, start, target):
+        """
+        Borrowed code from DiscoPygal's dRRT implementation.
+        """
+        num_robots = len(self.implicit_graph.roadmaps)
+        paths = []
+        for i, graph in enumerate(self.implicit_graph.roadmaps):
+            if not nx.algorithms.has_path(graph, start[i], target[i]):
+                return False
+            path = nx.algorithms.shortest_path(graph, start[i], target[i], weight='weight')
+            paths.append(path)
+        
+        # Generate the priority graph
+        priority_graph = nx.DiGraph()
+        priority_graph.add_nodes_from(range(num_robots))
+        for i in range(num_robots):
+            for j, roadmap_j in enumerate(self.implicit_graph.roadmaps):
+                if i == j:
+                    continue
+                # Robot i stays in place in its target
+                edge_i = [target[i]]
+
+                # Robot j moves along its path
+                for k in range(len(paths[j]) - 1):
+                    edge_j = self.implicit_graph.get_edge_from_roadmap(j, paths[j][k], paths[j][k + 1])
+                    if self.env.two_robots_collision_on_paths(i, edge_i, j, edge_j):
+                        # If j collides with i when i is in its target, j needs to reach the target before i 
+                        priority_graph.add_edge(j, i)
+
+                # Robot i stays in place in its start
+                edge_i = [start[i]]
+
+                # Robot j moves along its path again
+                for k in range(len(paths[j])-1):
+                    edge_j = self.implicit_graph.get_edge_from_roadmap(j, paths[j][k], paths[j][k + 1])
+                    if self.env.two_robots_collision_on_paths(i, edge_i, j, edge_j):
+                        # If j collides with i when i is in its start, i needs to reach the target before j
+                        priority_graph.add_edge(i, j)
+        
+        # If there are cycles, no ordering can be found
+        if not nx.algorithms.is_directed_acyclic_graph(priority_graph):
+            return False
+
+        # Build a path based on the topological ordering
+        curr_vertex = start
+        for r in nx.algorithms.topological_sort(priority_graph):
+            for v in paths[r]:
+                # Advance only the correct robot
+                new_ptr = [p for p in curr_vertex]
+                new_ptr[r] = v
+                new_ptr = tuple(new_ptr)
+                self.tree.add_edge(curr_vertex, new_ptr)
+                curr_vertex = new_ptr
+                
+        assert(curr_vertex == target) # We should have reached the destination
+
+        # # If managed to connect to the goal.
+        # self.tree.add_edge(neighbor, goal_configs, path=path)
+        # # if self.visualize:
+        #     # self.env.draw_line_between_multi_configs(neighbor, goal_configs, path)
+        # return True
+        return True
 
     def connect_to_target(self, goal_configs, iteration):
         """
@@ -87,12 +141,8 @@ class MRdRRTPlanner(object):
             if neighbor == goal_configs:
                 # If 'expand' has already reached the target, no need to try to connect.
                 return True
-            path = self.local_connector(neighbor, goal_configs)
-            if path:
-                # If managed to connect to the goal.
-                self.tree.add_edge(neighbor, goal_configs, path=path)
-                if self.visualize:
-                    self.env.draw_line_between_multi_configs(neighbor, goal_configs, path)
+            success = self.local_connector(neighbor, goal_configs)
+            if success:
                 return True
         return False
 
@@ -124,9 +174,11 @@ class MRdRRTPlanner(object):
                 print(str(i) + "th iteration")
 
         if success:
-            nodes = nx.shortest_path(self.tree, source=start_configs, target=goal_configs)
-            path = [[list(itertools.chain.from_iterable(node1))] + self.tree.edges[node1, node2]['path'] for node1, node2 in zip(nodes, nodes[1:])]
-            path = list(itertools.chain.from_iterable(path)) + [list(itertools.chain.from_iterable(goal_configs))]
+            nodes = nx.shortest_path(self.tree, source=start_configs, target=goal_configs) # TODO add weights when inserting to tree
+            paths_between_nodes = list([tensor_node_to_vector(node1)] + self.implicit_graph.create_movement_path_on_tensor_edge(node1, node2)
+                                    for node1, node2 in zip(nodes, nodes[1:]))
+            paths_between_nodes.append([tensor_node_to_vector(goal_configs)])
+            path = list(itertools.chain.from_iterable(paths_between_nodes))
             return path
         else:
             print("Failed to find path - hit maximum iterations.")

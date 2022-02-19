@@ -87,6 +87,9 @@ class MultiRobotEnv(metaclass=ABCMeta):
         pass
 
     def draw_line_between_multi_configs(self, q1, q2, path=[]):
+        """
+        Expects q1, q2 to be tensor vertics, 
+        """
         full_path = [list(itertools.chain.from_iterable(q1))] + path + [list(itertools.chain.from_iterable(q2))]
         points = list(map(self.multi_forward_kinematics, full_path))
         for prev, curr in zip(points, points[1:]):
