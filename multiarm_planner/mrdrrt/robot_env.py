@@ -75,14 +75,6 @@ class MultiRobotEnv(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def check_multiple_collision(q):
-        pass
-
-    @abstractmethod
-    def extend(q1, q2):
-        pass
-
-    @abstractmethod
     def multi_forward_kinematics(self, q):
         pass
 
@@ -95,16 +87,6 @@ class MultiRobotEnv(metaclass=ABCMeta):
         for prev, curr in zip(points, points[1:]):
             for i in range(len(prev)):
                 self.robot_envs[i].draw_line(prev[i], curr[i])
-
-    def check_path_collision_free(self, q1, q2):
-        """
-        Checks if path is collision free between two collision free configs. if it is, return it.
-        """
-        path = list(self.extend(q1, q2))[:-1]
-        # Note: can be improved using some sort of bisect selector.
-        if not any(self.check_multiple_collision(q) for q in path):
-            return path
-        return None
     
     @abstractmethod
     def setup_single_prm(i, start_configs, goal_configs, **kwargs):

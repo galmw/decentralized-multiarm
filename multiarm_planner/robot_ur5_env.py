@@ -4,15 +4,19 @@ from .mrdrrt.robot_env import RobotEnv, MultiRobotEnv
 
 
 class RobotUR5Env(RobotEnv):
-    def __init__(self, ur5) -> None:
+    def __init__(self, ur5, obstacles=None) -> None:
         self.ur5 = ur5
+        if obstacles:
+            self.obstacles_ids = [obs.body_id for obs in obstacles]
+        else:
+            self.obstacles_ids = None
 
     def sample_config(self):
         return tuple(self.ur5.arm_sample_fn())
 
     def check_collision(self, q):
         self.ur5.set_arm_joints(q)
-        return self.ur5.check_collision()
+        return self.ur5.check_collision(obstacles_ids=self.obstacles_ids)
 
     def distance(self, q1, q2):
         return self.ur5.arm_distance_fn(q1, q2)
@@ -31,14 +35,9 @@ class RobotUR5Env(RobotEnv):
 
 
 class MultiRobotUR5Env(MultiRobotEnv):
-    def __init__(self, ur5_group, resolutions) -> None:
+    def __init__(self, ur5_group, resolutions, obstacles=None) -> None:
         self.ur5_group = ur5_group
-        self.robot_envs = [RobotUR5Env(ur5) for ur5 in ur5_group.active_controllers]
-    
-        # TODO so theoretically this function shouldn't even exist or be used
-        self.check_multiple_collision_fn = self.ur5_group.get_collision_fn()
-        # Same for this one
-        self.extend_fn = self.ur5_group.get_extend_fn(resolutions)
+        self.robot_envs = [RobotUR5Env(ur5, obstacles) for ur5 in ur5_group.active_controllers]
 
     def two_robots_collision_on_paths(self, robot1, path1, robot2, path2):
         ur5_a = self.ur5_group.active_controllers[robot1]
@@ -67,12 +66,6 @@ class MultiRobotUR5Env(MultiRobotEnv):
         Defined as sum of Euclidean distances between PRM nodes in two configs.
         """
         return self.ur5_group.distance_fn(q1, q2)
-
-    def check_multiple_collision(self, q):
-        return self.check_multiple_collision_fn(q)
-    
-    def extend(self, q1, q2):
-        return self.extend_fn(list(itertools.chain.from_iterable(q1)), list(itertools.chain.from_iterable(q2)))
 
     def setup_single_prm(self, i, start_configs, goal_configs, **kwargs):
         ur5_poses = kwargs['ur5_poses']

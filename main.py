@@ -12,7 +12,7 @@ def main(args):
 
     for i in range(len(tasks)):
         if args.mode == 'mrdrrt':
-            mutiarm_env.mrdrrt_from_task(tasks[i], cache_drrt=args.cache_drrt, num_prm_nodes=args.num_prm_nodes)
+            mutiarm_env.mrdrrt_from_task(tasks[i], cache_roadmaps=args.cache_roadmaps, num_prm_nodes=args.num_prm_nodes)
         elif args.mode == 'rrt':
             mutiarm_env.birrt_from_task(tasks[i])
 

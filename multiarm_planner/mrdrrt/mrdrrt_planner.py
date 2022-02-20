@@ -209,15 +209,15 @@ class MRdRRTPlanner(object):
             prm_graphs.append(prm_planner.graph)
         self.implicit_graph = ImplicitGraph(self.env, prm_graphs)
 
-    def get_implicit_graph(self, start_configs, goal_configs, ur5_poses, cache_drrt, task_path, n_nodes=50):
-        if cache_drrt:
+    def get_implicit_graph(self, start_configs, goal_configs, ur5_poses, cache_roadmaps, task_path, n_nodes=50):
+        if cache_roadmaps:
             try:
                 self.load_implicit_graph_from_cache_file(task_path)
             except:
                 print("Can't load implicit graph from file.")
         if not self.implicit_graph:
             self.generate_implicit_graph_with_prm(start_configs, goal_configs, n_nodes=n_nodes, ur5_poses=ur5_poses)
-        if cache_drrt:
+        if cache_roadmaps:
             self.cache_loaded_graphs_to_file(task_path)
             
         # Make sure roadmaps are good enough

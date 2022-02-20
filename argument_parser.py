@@ -15,8 +15,8 @@ def main_parse_args():
                             'mrdrrt'
                         ],
                         default='rrt')
-    parser.add_argument('--cache-drrt', action='store_true',
-                        default=True, help='Cache drrt implicit graphs for later use')
+    parser.add_argument('--cache-roadmaps', action='store_true',
+                        default=True, help='Cache drrt roadmap graphs for later use')
     parser.add_argument('--num-prm-nodes', type=int,
                         default=50, help='How many nodes to setup each PRM roadmap')
     args = parser.parse_args()

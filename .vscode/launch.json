@@ -15,7 +15,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt",  "--gui", "--visualize"]
+            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-roadmaps",  "--gui", "--visualize"]
         },
         {
             "name": "dRRT",
@@ -23,7 +23,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-drrt",  "--gui"]
+            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-roadmaps",  "--gui"]
         },
         {
             "name": "Task Designer",

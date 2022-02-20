@@ -334,10 +334,15 @@ class UR5:
         self.closest_points_to_self = []
         self.max_distance_from_others = 0.5
 
-    def update_closest_points(self):
-        others_id = [p.getBodyUniqueId(i)
-                     for i in range(p.getNumBodies())
-                     if p.getBodyUniqueId(i) != self.body_id]
+    def update_closest_points(self, obstacles_ids=None):
+        if obstacles_ids:
+            # Add the plane to the list
+            others_id = [0] + obstacles_ids
+        else:
+            others_id = [p.getBodyUniqueId(i)
+                        for i in range(p.getNumBodies())
+                        if p.getBodyUniqueId(i) != self.body_id]
+                    
         self.closest_points_to_others = [
             sorted(list(p.getClosestPoints(
                 bodyA=self.body_id, bodyB=other_id,
@@ -356,8 +361,8 @@ class UR5:
         self.set_arm_joints(q)
         return self.check_collision()
 
-    def check_collision(self, collision_distance=0.0):
-        self.update_closest_points()
+    def check_collision(self, collision_distance=0.0, obstacles_ids=None):
+        self.update_closest_points(obstacles_ids=obstacles_ids)
         # Collisions with others
         for i, closest_points_to_other in enumerate(
                 self.closest_points_to_others):
