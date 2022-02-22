@@ -97,7 +97,7 @@ class MultiarmEnvironment:
         start_configs = tuple(tuple(conf) for conf in start_configs)
         goal_configs = tuple(tuple(conf) for conf in goal_configs)
         self.setup_run(ur5_poses, start_configs, target_eff_poses, obstacles)
-        env = MultiRobotUR5Env(self.ur5_group, resolutions, self.obstacles) # TODO add obstacles into env to refine collision check
+        env = MultiRobotUR5Env(self.ur5_group, resolutions, self.obstacles)
         mrdrrt = MRdRRTPlanner(env, visualize=self.visualize)
 
         mrdrrt.get_implicit_graph(start_configs=start_configs, goal_configs=goal_configs, ur5_poses=ur5_poses,
