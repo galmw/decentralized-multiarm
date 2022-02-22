@@ -25,10 +25,6 @@ class RobotEnv(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def difference(self, q1, q2):
-        pass
-    
-    @abstractmethod
     def extend(self, q1, q2):
         pass
 
