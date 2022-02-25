@@ -143,5 +143,15 @@
     "ur5_count": 3,
     "id": -1,
     "task_path": "benchmark\\3_easy.json",
-    "obstacles": []
+    "obstacles": [
+        {
+            "urdf_file": "cube.urdf",
+            "position": [
+                2,
+                2,
+                0
+            ],
+            "scale": 0.1
+        }
+    ]
 }

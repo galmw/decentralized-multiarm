@@ -273,5 +273,14 @@
     "id": -1,
     "task_path": "benchmark\\6_normal.json",
     "obstacles": [
+        {
+            "urdf_file": "cube.urdf",
+            "position": [
+                2,
+                2,
+                0
+            ],
+            "scale": 0.1
+        }
     ]
 }
