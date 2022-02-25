@@ -1,11 +1,12 @@
 import itertools
 import os
 import random
+from venv import create
 import IPython
 import numpy as np
 import pybullet as p
 from argument_parser import task_designer_parse_args
-from multiarm_planner.obstacles import Obstacle
+from multiarm_planner.utils import create_circular_poses
 from multiarm_planner.rrt import MultiarmEnvironment
 from multiarm_planner.rrt.pybullet_utils import pairwise_collision
 from multiarm_planner.tasks import Task
@@ -41,12 +42,13 @@ class TaskDesigner(object):
     def active_ur5s(self):
         return self.multiarm_env.ur5_group.active_controllers
     
-    def reset_robots(self, ur5s_count):
+    def reset_robots(self, ur5s_count, set_collision_free=True):
         self.multiarm_env.ur5_group.enable_ur5s(count=ur5s_count)
         self._randomize_positions()
         for ur5 in self.active_ur5s:
             ur5.reset()
-        self.randomize_collision_free_configs()
+        if set_collision_free:
+            self.randomize_collision_free_configs()
 
     def _sample_random_base_position(self, space_range=(-1, 1)):
         return np.array([random.uniform(*space_range), random.uniform(*space_range), 0])
@@ -71,19 +73,50 @@ class TaskDesigner(object):
                 target_pose = ur5.workspace.point_in_workspace()
                 ur5.set_target_end_eff_pos(target_pose)
 
-            for _ in range(50):
-                p.stepSimulation()
-                for ur5 in self.active_ur5s:
-                    ur5.step()
-
             if not any([ur5.check_collision() or ur5.violates_limits() for ur5 in self.active_ur5s]):
                 # Collision free initial states within joint limits
                 break
 
-    def create_task(self):
-        self.randomize_collision_free_configs()
+    def fast_randomize_collision_free_configs(self, order_forward=True):
+        ur5s_order = self.active_ur5s if order_forward else self.active_ur5s[::-1]
+        original_poses = [ur5.pose for ur5 in ur5s_order]
+        for ur5, pose in zip(self.active_ur5s, create_circular_poses(3, len(self.active_ur5s))):
+            ur5.set_pose(pose)
+
+        while True:
+            retry = False
+            for ur5, original_pose in zip(ur5s_order, original_poses):
+                stop = 0
+                while True:
+                    ur5.set_pose(original_pose)
+                    ur5.set_arm_joints(ur5.arm_sample_fn())
+                    # target_pose = ur5.workspace.point_in_workspace()
+                    # ur5.set_target_end_eff_pos(target_pose)
+                    if not (ur5.check_collision() or ur5.violates_limits()):
+                        # Collision free initial states within joint limits
+                        break
+                    if stop == 999:
+                        # If stuck, restart
+                        retry = True
+                        break
+                    stop += 1
+                if retry:
+                    break
+            if retry:
+                continue
+            else:
+                break
+        
+    def create_task(self, fast_randomize=False):
+        if fast_randomize:
+            self.fast_randomize_collision_free_configs(True)
+        else:
+            self.randomize_collision_free_configs()
         start_config = [ur5.get_arm_joint_values() for ur5 in self.active_ur5s]
-        self.randomize_collision_free_configs()
+        if fast_randomize:
+            self.fast_randomize_collision_free_configs(True)
+        else:
+            self.randomize_collision_free_configs()
         goal_config = [ur5.get_arm_joint_values() for ur5 in self.active_ur5s]
 
         self.task = Task(base_poses=[ur5.get_pose() for ur5 in self.active_ur5s],

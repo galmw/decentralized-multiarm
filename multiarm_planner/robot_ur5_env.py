@@ -6,6 +6,7 @@ from .mrdrrt.robot_env import RobotEnv, MultiRobotEnv
 class RobotUR5Env(RobotEnv):
     def __init__(self, ur5, obstacles=None) -> None:
         self.ur5 = ur5
+        # if type(obstacles) is list:
         if obstacles:
             self.obstacles_ids = [obs.body_id for obs in obstacles]
         else:

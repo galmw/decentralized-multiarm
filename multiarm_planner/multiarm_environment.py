@@ -41,7 +41,7 @@ class MultiarmEnvironment:
 
         self.ur5_group.setup(ur5_poses, start_conf)
         del self.obstacles
-        self.obstacles = Obstacle.load_obstacles(obstacles) if obstacles else None
+        self.obstacles = Obstacle.load_obstacles(obstacles)
 
     def birrt_from_task(self, task):
         print("[MultiarmEnv] Running BiRRT for task {0}".format(task.id))

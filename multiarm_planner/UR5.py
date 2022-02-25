@@ -335,6 +335,8 @@ class UR5:
         self.max_distance_from_others = 0.5
 
     def update_closest_points(self, obstacles_ids=None):
+        # if type(obstacles_ids) is list:
+        #     others_id = obstacles_ids
         if obstacles_ids:
             # Add the plane to the list
             others_id = [0] + obstacles_ids
