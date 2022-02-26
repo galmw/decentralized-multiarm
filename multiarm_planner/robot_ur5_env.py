@@ -48,7 +48,7 @@ class MultiRobotUR5Env(MultiRobotEnv):
                 ur5_a.set_arm_joints(q1)
             if q2:
                 ur5_b.set_arm_joints(q2)
-            if pybullet_utils.pairwise_collision(ur5_a.body_id, ur5_b.body_id):
+            if pybullet_utils.working_pairwise_collision(ur5_a.body_id, ur5_b.body_id):
                 return True
         return False
 

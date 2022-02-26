@@ -23,7 +23,8 @@ class MRdRRTPlanner(object):
     of implicit roadmaps in multi-robot motion planning." Algorithmic Foundations
     of Robotics XI. Springer International Publishing, 2015. 591-607.
     """
-    _EXPAND_N = 20
+    # _EXPAND_N = 20
+    _EXPAND_N = 50
     _MAX_ITER = 5000
 
     def __init__(self, env: MultiRobotEnv, visualize=False):
@@ -40,6 +41,7 @@ class MRdRRTPlanner(object):
         explored yet, and is closest (by sum of euclidean distances) to qnear.
         """
         q_new = self.implicit_graph.get_best_composite_neighbor(q_near, q_rand)
+        # q_new = self.implicit_graph.get_best_composite_neighbor(q_near, q_rand, False)
         return q_new
 
     def tree_nearest_neighbor(self, config):
@@ -69,7 +71,6 @@ class MRdRRTPlanner(object):
                 if q_new == goal_configs:
                     break
     
-    @timefunc
     def local_connector(self, start, target):
         """
         We do that by the method proposed by de Berg:

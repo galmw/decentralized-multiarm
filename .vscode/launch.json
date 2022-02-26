@@ -23,7 +23,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-roadmaps",  "--gui"]
+            "args" : ["--mode", "mrdrrt", "--tasks-path", "benchmark", "--cache-roadmaps",  "--gui", "--num-prm-nodes", "500"]
         },
         {
             "name": "Task Designer",

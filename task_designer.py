@@ -8,7 +8,7 @@ import pybullet as p
 from argument_parser import task_designer_parse_args
 from multiarm_planner.utils import create_circular_poses
 from multiarm_planner.rrt import MultiarmEnvironment
-from multiarm_planner.rrt.pybullet_utils import pairwise_collision
+from multiarm_planner.rrt.pybullet_utils import working_pairwise_collision
 from multiarm_planner.tasks import Task
 
 
@@ -147,7 +147,7 @@ class TaskDesigner(object):
                 self.task.obstacles.remove(obs)
                 continue
             # Check collision with other cubes
-            if any(pairwise_collision(cube_id, o.body_id) for o in self.multiarm_env.obstacles[:-1]):
+            if any(working_pairwise_collision(cube_id, o.body_id) for o in self.multiarm_env.obstacles[:-1]):
                 self.task.obstacles.remove(obs)
                 continue
             break
