@@ -399,6 +399,10 @@ def pairwise_collision(body1, body2, max_distance=MAX_DISTANCE):  # 10000
     return p.getContactPoints(body1, body2) != ()
 
 
+def working_pairwise_collision(body1, body2, max_distance=MAX_DISTANCE):  # 10000
+    return len(p.getClosestPoints(bodyA=body1, bodyB=body2, distance=max_distance)) != 0
+
+
 def pairwise_link_collision(body1, link1, body2, link2, max_distance=MAX_DISTANCE):  # 10000
     # return len(p.getClosestPoints(bodyA=body1, bodyB=body2, distance=max_distance,
     #                               linkIndexA=link1, linkIndexB=link2)) != 0  # getContactPoints
