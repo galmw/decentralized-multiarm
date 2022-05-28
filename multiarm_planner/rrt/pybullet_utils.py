@@ -377,6 +377,22 @@ def get_extend_fn(body, joints, resolutions=None):
 
 # Collision
 
+
+def working_pairwise_collision(body1, body2, max_distance=MAX_DISTANCE):  # 10000
+    # return len(p.getClosestPoints(bodyA=body1, bodyB=body2, distance=max_distance)) != 0
+    #return p.getContactPoints(body1, body2) != ()
+    WORST_DISTANCE_PAIRWISE = 0.05
+    points = p.getClosestPoints(bodyA=body1, bodyB=body2, distance=WORST_DISTANCE_PAIRWISE)
+    if points != ():
+        return True
+    return False
+    """
+    if min(p.getClosestPoints(bodyA=body1, bodyB=body2, distance=0.5), key=lambda contact_point: contact_point[8])[8] < 0:
+        return True
+    return False
+    """
+
+
 def pairwise_collision(body1, body2, max_distance=MAX_DISTANCE):  # 10000
     # getContactPoints
     # return len(p.getClosestPoints(bodyA=body1, bodyB=body2, distance=max_distance)) != 0
@@ -959,7 +975,7 @@ def plot_heatmap_bar(cmap_name, vmin=-1, vmax=-1):
 # https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 rgb_colors_255 = [(230, 25, 75),  # red
                   (60, 180, 75),  # green
-                  (255, 225, 25),  # yello
+                  (255, 225, 25),  # yellow
                   (0, 130, 200),  # blue
                   (245, 130, 48),  # orange
                   (145, 30, 180),  # purple

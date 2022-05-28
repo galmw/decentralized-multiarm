@@ -268,7 +268,7 @@ class UR5:
                  velocity=1.0,
                  enabled=True,
                  acceleration=2.0,
-                 training=True):
+                 ):
         self.velocity = velocity
         self.acceleration = acceleration
         self.pose = pose
@@ -281,27 +281,20 @@ class UR5:
         self.color = UR5.colors[UR5.next_available_color]
         UR5.next_available_color = (UR5.next_available_color + 1)\
             % len(UR5.colors)
-        if training:
-            self.body_id = p.loadURDF('assets/ur5/ur5_training.urdf',
-                                      self.pose[0],
-                                      self.pose[1],
-                                      flags=p.URDF_USE_SELF_COLLISION)
-            self.end_effector = None
-            p.changeVisualShape(
-                self.body_id,
-                UR5.EEF_LINK_INDEX,
-                textureUniqueId=-1,
-                rgbaColor=(
-                    self.color[0],
-                    self.color[1],
-                    self.color[2], 0.5))
-        else:
-            self.body_id = p.loadURDF('assets/ur5/ur5.urdf',
-                                      self.pose[0],
-                                      self.pose[1],
-                                      flags=p.URDF_USE_SELF_COLLISION)
-            self.end_effector = Robotiq2F85(ur5=self,
-                                            color=self.color)
+        self.body_id = p.loadURDF('assets/ur5/ur5_training.urdf',
+                                  self.pose[0],
+                                  self.pose[1],
+                                  flags=p.URDF_USE_SELF_COLLISION)
+        self.end_effector = None
+        p.changeVisualShape(
+            self.body_id,
+            UR5.EEF_LINK_INDEX,
+            textureUniqueId=-1,
+            rgbaColor=(
+                self.color[0],
+                self.color[1],
+                self.color[2], 0.5))
+
         # Get revolute joint indices of robot (skip fixed joints)
         robot_joint_info = [p.getJointInfo(self.body_id, i)
                             for i in range(p.getNumJoints(self.body_id))]
@@ -345,13 +338,9 @@ class UR5:
                         for i in range(p.getNumBodies())
                         if p.getBodyUniqueId(i) != self.body_id]
                     
-        self.closest_points_to_others = [
-            sorted(list(p.getClosestPoints(
-                bodyA=self.body_id, bodyB=other_id,
-                distance=self.max_distance_from_others)),
-                key=lambda contact_points: contact_points[8])
-            if other_id != 0 else []
-            for other_id in others_id]
+        self.closest_points_to_others = [sorted(list(p.getClosestPoints(bodyA=self.body_id, bodyB=other_id, distance=self.max_distance_from_others)),
+                                                key=lambda contact_points: contact_points[8])
+                                            if other_id != 0 else [] for other_id in others_id]
         self.closest_points_to_self = [
             p.getClosestPoints(
                 bodyA=self.body_id, bodyB=self.body_id,

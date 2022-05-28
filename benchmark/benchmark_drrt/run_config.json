@@ -1,0 +1,10 @@
+{
+    "planners": [
+        {
+            "name": "Default dRRT",
+            "algorithm": "mrdrrt",
+            "cache_roadmaps": true,
+            "num_prm_nodes": 300
+        }
+    ]
+}

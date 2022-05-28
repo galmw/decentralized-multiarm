@@ -301,13 +301,13 @@ def create_circular_poses(radius, count):
         for i in range(count)]
 
 
-def create_ur5s(radius, count, speed, training=True):
+# def create_ur5s(radius, count, speed, training=True):
+def create_ur5s(radius, count, speed):
     return [
         UR5(
             pose=pose,
             enabled=False,
-            velocity=speed,
-            training=training
+            velocity=speed
         )
         for pose in create_circular_poses(radius, count)
     ]

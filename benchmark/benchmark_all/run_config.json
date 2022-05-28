@@ -1,0 +1,26 @@
+{
+    "planners": [
+        {
+            "name": "RRT",
+            "algorithm": "rrt"
+        },
+        {
+            "name": "BiRRT",
+            "algorithm": "birrt"
+        },
+        {
+            "name": "dRRT - default",
+            "algorithm": "mrdrrt",
+            "cache_roadmaps": true,
+            "num_prm_nodes": 300,
+            "goal_biasing": 0.2
+        },
+        {
+            "name": "dRRT - 0.3 Goal biased",
+            "algorithm": "mrdrrt",
+            "cache_roadmaps": true,
+            "num_prm_nodes": 300,
+            "goal_biasing": 0.3
+        }
+    ]
+}

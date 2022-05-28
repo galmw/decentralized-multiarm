@@ -10,6 +10,6 @@ def timefunc(f):
         start = time.time()
         result = f(*args, **kwargs)
         end = time.time()
-        print(f.__name__, 'took', end - start, 'seconds')
-        return result
+        print(f.__name__, 'took {:.2f} seconds'.format(end - start))
+        return result, (end - start)
     return f_timer

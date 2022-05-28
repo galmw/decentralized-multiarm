@@ -3,6 +3,8 @@ import math
 import os
 import pickle
 import heapq
+import random
+import time
 import networkx as nx
 from multiarm_planner.mrdrrt.robot_env import MultiRobotEnv
 
@@ -23,7 +25,7 @@ class MRdRRTPlanner(object):
     of implicit roadmaps in multi-robot motion planning." Algorithmic Foundations
     of Robotics XI. Springer International Publishing, 2015. 591-607.
     """
-    _EXPAND_N = 20
+    _CONNECT_TO_TARGET_N = 1000
     _MAX_ITER = 5000
 
     def __init__(self, env: MultiRobotEnv, visualize=False):
@@ -52,24 +54,24 @@ class MRdRRTPlanner(object):
         neighbors = heapq.nsmallest(k, self.tree.nodes, key=lambda node: self.env.composite_distance(node, config))
         return neighbors
     
-    @timefunc
-    def expand(self, goal_configs):
+    def expand(self, goal_configs, goal_biasing=0.2):
         """
         Takes random samples and tries to expand tree in direction of sample.
+        Return number of 'exapnd' iterations.
         """
-        for _ in range(self._EXPAND_N):
-            q_rand = self.env.sample_free_multi_config()
-            q_near = self.tree_nearest_neighbor(q_rand)
-            q_new = self.oracle(q_near, q_rand)
+        goal_bias = random.random() < goal_biasing
+        q_rand = goal_configs if goal_bias else self.env.sample_free_multi_config()
+        q_near = self.tree_nearest_neighbor(q_rand)
+        q_new = self.oracle(q_near, q_rand)
 
-            if q_new and q_new not in self.tree.nodes:
-                self.tree.add_edge(q_near, q_new)
-                if self.visualize:
-                    self.implicit_graph.draw_composite_edge(q_near, q_new)
-                if q_new == goal_configs:
-                    break
+        if q_new and q_new not in self.tree.nodes:
+            self.tree.add_edge(q_near, q_new)
+            if self.visualize:
+                self.implicit_graph.draw_composite_edge(q_near, q_new)
+            if q_new == goal_configs:
+                return True
+        return False
     
-    @timefunc
     def local_connector(self, start, target):
         """
         We do that by the method proposed by de Berg:
@@ -131,7 +133,6 @@ class MRdRRTPlanner(object):
         assert(curr_vertex == target) # We should have reached the destination
         return True
 
-    @timefunc
     def connect_to_target(self, goal_configs, iteration):
         """
         Check if it's possible to get to goal from closest nodes in current tree.
@@ -148,8 +149,8 @@ class MRdRRTPlanner(object):
                 return True
         return False
 
-    @timefunc
-    def find_path(self, start_configs, goal_configs):
+    
+    def find_path(self, start_configs, goal_configs, goal_biasing=0.2, timeout=300):
         """
         Main function for MRdRRT. Expands tree to find path from start to goal.
         Inputs: list of start and goal configs for robots.
@@ -161,28 +162,34 @@ class MRdRRTPlanner(object):
         assert len(start_configs) == len(goal_configs), "Start and goal configurations don't match in length"
 
         print("Looking for a path...")
+        start_time = time.time()
         # Put start config in tree
         self.tree.add_node(start_configs)
-        success = None
 
         for i in range(1, self._MAX_ITER + 1):
-            self.expand(goal_configs)
-            success = self.connect_to_target(goal_configs, i)
-            if success:
-                print("Found a path! Constructing final path now..")
+            run_time = float(time.time() - start_time)
+            if run_time > timeout:
+                break
+            if self.expand(goal_configs, goal_biasing=goal_biasing):
+                break
+            if i % self._CONNECT_TO_TARGET_N == 0 and self.connect_to_target(goal_configs, i):
+                # Try a better connector every once in a while.
                 break
             if(i % 50 == 0):
-                print(str(i) + "th iteration")
+                print(f"{i}th iteration")
 
-        if success:
+        if run_time >= timeout or i >= self._MAX_ITER:
+            print("Failed to find path - hit timeout or maximum iterations.")
+            return None, i, run_time
+        
+        else:
+            print("Found a path! Constructing final path now..")
             nodes = nx.shortest_path(self.tree, source=start_configs, target=goal_configs) # TODO add weights when inserting to tree
             paths_between_nodes = list([tensor_node_to_vector(node1)] + self.implicit_graph.create_movement_path_on_tensor_edge(node1, node2)
                                     for node1, node2 in zip(nodes, nodes[1:]))
             paths_between_nodes.append([tensor_node_to_vector(goal_configs)])
             path = list(itertools.chain.from_iterable(paths_between_nodes))
-            return path
-        else:
-            print("Failed to find path - hit maximum iterations.")
+            return path, i, run_time
 
     def task_cache_path(self, task_path):
         return os.path.splitext(task_path)[0] + "_cached.p"
@@ -199,7 +206,6 @@ class MRdRRTPlanner(object):
             pickle.dump(self.implicit_graph.roadmaps, f)
         print("Saved roadmaps.")
     
-    @timefunc
     def generate_implicit_graph_with_prm(self, start_configs, goal_configs, n_nodes=50, **kwargs):
         prm_graphs = []
         for i in range(len(start_configs)):

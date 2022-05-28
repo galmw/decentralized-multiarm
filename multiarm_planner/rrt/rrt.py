@@ -6,9 +6,11 @@
 
 from random import random
 
+from multiarm_planner.profile_utils import timefunc
+
 from .rrt_utils import irange, argmin
 from .pybullet_utils import draw_line
-
+import time
 
 class TreeNode(object):
 
@@ -59,7 +61,8 @@ def rrt(start,
         greedy=True,
         visualize=False,
         fk=None,
-        group=False):
+        group=False,
+        timeout=300):
     """
     RRT algorithm
     :param start: start configuration
@@ -74,8 +77,9 @@ def rrt(start,
     :param visualize: whether draw nodes and lines for the tree
     :param fk: forward kinematics function, return pose 2d or a list of pose 2d. This is necessary when visualize is True
     :param group: whether this is a group of arms
-    :return: a list of configurations
+    :return: A 3-tuple of (path, nun_iterations, run_time)
     """
+    start_time = time.time()
     if collision(start):
         print("rrt fails, start configuration has collision")
         return None
@@ -83,7 +87,10 @@ def rrt(start,
         g = goal_sample
         def goal_sample(): return g
     nodes = [TreeNode(start)]
-    for i in irange(iterations):
+    for i in irange(1, iterations + 1):
+        run_time = float(time.time() - start_time)
+        if run_time > timeout:
+            break
         goal = random() < goal_probability or i == 0
         s = goal_sample() if goal else sample()
 
@@ -95,8 +102,7 @@ def rrt(start,
                 assert fk is not None, 'please provide a fk when visualizing'
                 if group:
                     for pose_now, pose_prev in zip(fk(q), fk(last.config)):
-                        draw_line(
-                            pose_prev[0], pose_now[0], rgb_color=(0, 1, 0), width=1)
+                        draw_line(pose_prev[0], pose_now[0], rgb_color=(0, 1, 0), width=1)
                 else:
                     p_now = fk(q)[0]
                     p_prev = fk(last.config)[0]
@@ -104,11 +110,10 @@ def rrt(start,
             last = TreeNode(q, parent=last)
             nodes.append(last)
             if goal_test(last.config):
-                return configs(last.retrace())
+                return configs(last.retrace()), i, run_time
             if not greedy:
                 break
         else:
             if goal:
-                print('impossible')
-                return configs(last.retrace())
-    return None
+                return configs(last.retrace()), i, run_time
+    return None, i, run_time

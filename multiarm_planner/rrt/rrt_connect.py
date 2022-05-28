@@ -9,7 +9,7 @@ from .smoothing import smooth_path
 from .rrt import TreeNode, configs
 from .rrt_utils import irange, argmin
 from .pybullet_utils import draw_line
-from time import time
+import time
 import pickle
 
 
@@ -26,7 +26,7 @@ def rrt_connect(q1,
                 greedy,
                 timeout,
                 record=False):
-    start_time = time()
+    start_time = time.time()
     if collision(q1) or collision(q2):
         return None
     root1, root2 = TreeNode(q1), TreeNode(q2)
@@ -35,7 +35,8 @@ def rrt_connect(q1,
     if visualize:
         color1, color2 = [0, 1, 0], [0, 0, 1]
     for iteration in irange(iterations):
-        if float(time() - start_time) > timeout:
+        run_time = float(time.time() - start_time)
+        if run_time > timeout:
             break
         if len(nodes1) > len(nodes2):
             nodes1, nodes2 = nodes2, nodes1
@@ -95,10 +96,10 @@ def rrt_connect(q1,
             if record:
                 with open('edges.pkl', 'wb') as f:
                     pickle.dump(edges, f)
-            return configs(path1[:-1] + path2[::-1])
+            return configs(path1[:-1] + path2[::-1]), iteration, run_time
         if iteration % 100 == 0:
-            print(f"Ran {iteration} iterations of RRT")
-    return None
+            print(f"Ran {iteration} iterations of RRT-Connect")
+    return None, iteration, run_time
 
 
 def direct_path(q1, q2, extend, collision):
@@ -112,7 +113,6 @@ def direct_path(q1, q2, extend, collision):
     return path
 
 
-@timefunc
 def birrt(start_conf,
           goal_conf,
           distance,
@@ -128,19 +128,20 @@ def birrt(start_conf,
           timeout):
     path = direct_path(start_conf, goal_conf, extend, collision)
     if path is not None:
-        return path
-    path = rrt_connect(start_conf,
-                       goal_conf,
-                       distance,
-                       sample,
-                       extend,
-                       collision,
-                       iterations,
-                       visualize,
-                       fk,
-                       group,
-                       greedy,
-                       timeout)
+        # This means the configuration is not interesting.
+        return path, 0, 0
+    path, num_iterations, time = rrt_connect(start_conf,
+                                            goal_conf,
+                                            distance,
+                                            sample,
+                                            extend,
+                                            collision,
+                                            iterations,
+                                            visualize,
+                                            fk,
+                                            group,
+                                            greedy,
+                                            timeout)
     if path is not None:
-        return smooth_path(path, extend, collision, iterations=smooth)
-    return None
+        return smooth_path(path, extend, collision, iterations=smooth), num_iterations, time
+    return None, iterations, time

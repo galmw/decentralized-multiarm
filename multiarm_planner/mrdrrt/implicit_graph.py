@@ -36,7 +36,7 @@ class ImplicitGraph(object):
         self.roadmaps = roadmaps
         self.env = env
 
-    def clean_neighbor_movement(self, q, neighbor):
+    def check_valid_movement(self, q, neighbor, clean=True):
         if q == neighbor:
             return None
         paths = self.get_tensor_edge_paths(q, neighbor)
@@ -44,12 +44,16 @@ class ImplicitGraph(object):
             for j in range(i + 1, len(self.roadmaps)):
                 # Checking inner paths should suffice?
                 if self.env.two_robots_collision_on_paths(i, paths[i], j, paths[j]):
-                    # If they collide, put robot j in place and try again
-                    new_neighbor = tuple(vertex if idx != j else q[idx] for idx, vertex in enumerate(neighbor))
-                    if new_neighbor == neighbor:
-                        # If our change doesn't help
+                    if clean is False:
+                        # Do not try anything else
                         return None
-                    return self.clean_neighbor_movement(q, new_neighbor)
+                    else:
+                        # If they collide, put robot j in place and try again
+                        new_neighbor = tuple(vertex if idx != j else q[idx] for idx, vertex in enumerate(neighbor))
+                        if new_neighbor == neighbor:
+                            # If our change doesn't help
+                            return None
+                        return self.check_valid_movement(q, new_neighbor, True)
         return neighbor
 
     def get_best_composite_neighbor(self, q_near, q_rand, clean_movement=True):
@@ -58,8 +62,7 @@ class ImplicitGraph(object):
         find neighbor of qnear that is best headed towards qrand
         """
         best_neighbor = tuple(self._get_best_neighbor_in_individual_graph(i, q_near[i], q_rand[i]) for i in range(len(self.roadmaps)))
-        if clean_movement:
-            best_neighbor = self.clean_neighbor_movement(q_near, best_neighbor)
+        best_neighbor = self.check_valid_movement(q_near, best_neighbor, clean=clean_movement)
         return best_neighbor
 
     def _get_best_neighbor_in_individual_graph(self, index, q_near, q_rand):
